@@ -3,10 +3,38 @@
 use Slim\Http\Request;
 use Slim\Http\Response;
 
-// Routes
+
+defined('INFO_REQUEST_PATH') || define('INFO_REQUEST_PATH', 'settings.txt');
+defined('REQUEST_STATUS_START') || define('REQUEST_STATUS_START', 0);
+defined('REQUEST_STATUS_END') || define('REQUEST_STATUS_END', 1);
+defined('REQUEST_STATUS_ERR') || define('REQUEST_STATUS_ERR', 2);
+
+function registerRequest() {
+    $key = uniqid();
+    $infoRequestJson = file_get_contents(INFO_REQUEST_PATH);
+    $arrInfoRequest = $infoRequestJson ? json_decode($infoRequestJson) : array();
+    $arrInfoRequest[] = $key;
+    $infoRequestJson = json_encode($arrInfoRequest);
+    writeFileTest($infoRequestJson);
+    return $key;
+}
+
+function countRequest() {
+    $infoRequestJson = file_get_contents(INFO_REQUEST_PATH);
+    $arrInfoRequest = $infoRequestJson ? json_decode($infoRequestJson) : array();
+    return count($arrInfoRequest);
+}
+
+function unRegisterRequest($key) {
+    $infoRequestJson = file_get_contents(INFO_REQUEST_PATH);
+    $arrInfoRequest = $infoRequestJson ? json_decode($infoRequestJson) : array();
+    $arrInfoRequest = array_diff($arrInfoRequest, array($key));
+    $infoRequestJson = json_encode($arrInfoRequest);
+    writeFileTest($infoRequestJson);
+}
 
 function writeFileTest($settings) {
-    $fp = fopen('settings.txt', 'w+');
+    $fp = fopen(INFO_REQUEST_PATH, 'w+');
     if(!$fp) {
       trigger_error('file_put_contents cannot write in file.', E_USER_ERROR);
       return;
@@ -32,9 +60,10 @@ function get_client_ip() {
     else
         $ipaddress = 'UNKNOWN';
  
-    return date('y-m-d h:i:s') . ' ' . $ipaddress;
+    return $ipaddress;
 }
 
+// Routes
 $app->get('/[{name}]', function (Request $request, Response $response, array $args) {
     // Sample log message
     $this->logger->info("Slim-Skeleton '/' route");
@@ -43,22 +72,30 @@ $app->get('/[{name}]', function (Request $request, Response $response, array $ar
     return $this->renderer->render($response, 'index.phtml', $args);
 });
 
-$app->get('/users/', function (Request $request, Response $response, array $args) {
-    $texstSettings = file_get_contents('settings.txt');
-    $arrTest = array();
+$app->get('/test/', function (Request $request, Response $response, array $args) {
+    
+    $count = countRequest();
 
-    if ($texstSettings) {
-        $arrTest = json_decode($texstSettings);
+    if ($count > 0) {
+        return $response->withStatus(302)
+                        ->withHeader('Location', 'http://192.168.1.128:8080/example/public/users/');
     }
 
-    // $arrTest[] = date('hhmmss');
-    $arrTest[] = get_client_ip();
-    $settings = json_encode($arrTest);
+    $key = registerRequest();
 
-    writeFileTest($settings);
-    // file_put_content('settings.txt', $settings);
-
-    return $response->withJson($arrTest);
+    try {
+        sleep(10);
+        
+        unRegisterRequest($key);
+        return $response->withStatus(203)
+                        ->withJson(array(
+                            'IP'   => get_client_ip(),
+                            'TIME' => date('y-m-d h:i:s'),
+                        ));
+    } catch (Exception $e) {
+        unRegisterRequest($key);
+        return $response->withStatus(500);
+    }
 });
 
 // Retrieve user with id
