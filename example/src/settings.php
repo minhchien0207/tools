@@ -18,10 +18,10 @@ return [
 
         // Database connection settings
         'db' => [
-            'host'   => 'localhost:3306',
+            'host'   => '192.168.1.91:3306',
             'dbname' => 'microservice',
-            'user'   => 'root',
-            'pass'   => ''
+            'user'   => 'admin',
+            'pass'   => '123456'
         ],
     ],
 ];
