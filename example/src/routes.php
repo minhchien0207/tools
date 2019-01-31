@@ -59,7 +59,7 @@ function get_client_ip() {
         $ipaddress = getenv('REMOTE_ADDR');
     else
         $ipaddress = 'UNKNOWN';
- 
+
     return $ipaddress;
 }
 
@@ -73,7 +73,7 @@ $app->get('/[{name}]', function (Request $request, Response $response, array $ar
 });
 
 $app->get('/test/', function (Request $request, Response $response, array $args) {
-    
+
     $count = countRequest();
 
     if ($count > 0) {
@@ -85,9 +85,9 @@ $app->get('/test/', function (Request $request, Response $response, array $args)
 
     try {
         sleep(10);
-        
+
         unRegisterRequest($key);
-        return $response->withStatus(203)
+        return $response->withStatus(200)
                         ->withJson(array(
                             'IP'   => get_client_ip(),
                             'TIME' => date('y-m-d h:i:s'),
