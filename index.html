@@ -20,13 +20,13 @@
 								<div class="form-group">
 									<label for="numRequest" class="col-sm-2 control-label">Number request</label>
 									<div class="col-sm-10">
-										<input type="number" class="form-control" id="numRequest" placeholder="Ex. 10">
+										<input type="number" class="form-control" id="numRequest" placeholder="Ex. 10" value="10">
 									</div>
 								</div>
 								<div class="form-group">
 									<label for="txtURL" class="col-sm-2 control-label">URL</label>
 									<div class="col-sm-10">
-										<input type="text" class="form-control" id="txtURL" placeholder="...">
+										<input type="text" class="form-control" id="txtURL" placeholder="..." value="http://localhost:8888/github/microservice/pages/user_v1.php">
 									</div>
 								</div>
 								<div class="form-group">
@@ -92,20 +92,23 @@
 				var txtURL = $('#txtURL').val();
 
 				if(numberRequest > 0) {
-					$.ajax({
-						url: txtURL,
-						type: 'GET',
-						dataType: 'json'
-					})
-					.done(function() {
-						console.log("success");
-					})
-					.fail(function() {
-						console.log("error");
-					})
-					.always(function() {
-						console.log("complete");
-					});
+					for (var i = 0; i < numberRequest; i++) {
+						$.ajax({
+							url: txtURL,
+							type: 'GET',
+							dataType: 'json',
+							cache: false,
+						})
+						.done(function(result) {
+							console.log(this.url);
+						})
+						.fail(function(error) {
+							console.log(error);
+						})
+						.always(function() {
+							console.log("complete");
+						});
+					}
 				}
 			});
 
