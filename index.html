@@ -92,6 +92,8 @@
 				var txtURL = $('#txtURL').val();
 
 				if(numberRequest > 0) {
+					$('table tbody').html('');
+					var stt = 1;
 					for (var i = 0; i < numberRequest; i++) {
 						$.ajax({
 							url: txtURL,
@@ -100,13 +102,18 @@
 							cache: false,
 						})
 						.done(function(result) {
-							console.log(this.url);
+							// console.log(this.url);
+							console.log(result);
+							if(result.status == '200') {
+								$('table tbody').append(`<tr class="success"><td>${stt}</td><td>${result.url}</td><td>${result.status}</td><td>${result.time}</td></tr>`);
+							}
+							if(result.status == '500') {
+								$('table tbody').append(`<tr class="danger"><td>${stt}</td><td>${result.url}</td><td>${result.status}</td><td>${result.time}</td></tr>`);
+							}
+							stt++;
 						})
 						.fail(function(error) {
 							console.log(error);
-						})
-						.always(function() {
-							console.log("complete");
 						});
 					}
 				}
