@@ -1,0 +1,14 @@
+table thead tr th,
+table tbody tr td {
+  text-align: center;
+}
+table tbody tr:nth-last-child(2) td,
+table tbody tr:last-child td {
+  font-weight: bold;
+}
+.type {
+  display: none;
+}
+.type-1 {
+  display: block;
+}

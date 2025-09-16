@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculate date</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css"
+      integrity="sha512-Dop/vW3iOtayerlYAqCgkVr2aTr2ErwwTYOvRFUpzl2VhCMJyjQF0Q9TjUXIo6JhuM/3i0vVEt2e/7QQmnHQqw=="
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css"
+      integrity="sha512-aEe/ZxePawj0+G2R+AaIxgrQuKT68I28qh+wgLrcAJOz3rxCP+TwrK5SPN+E5I+1IQjNtcfvb96HDagwrKRdBw=="
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12" style="margin-top: 20px">
+          <form>
+            <div class="form-group row">
+              <label for="" class="col-sm-2 col-form-label">Kiểu</label>
+              <div class="col-sm-10 input-group">
+                <label class="radio-inline"> <input type="radio" name="optRadio" value="1" checked />Ngày </label>
+                <label class="radio-inline"> <input type="radio" name="optRadio" value="2" />Số ngày </label>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="sDate" class="col-sm-2 col-form-label">Ngày bắt đầu</label>
+              <div class="col-sm-10 input-group date">
+                <input type="text" class="form-control" id="sDate" />
+                <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+              </div>
+            </div>
+            <div class="form-group row type type-1" id="">
+              <label for="eDate" class="col-sm-2 col-form-label">Ngày kết thúc</label>
+              <div class="col-sm-10 input-group date">
+                <input type="text" class="form-control" id="eDate" />
+                <span class="input-group-addon">
+                  <span class="glyphicon glyphicon-calendar"></span>
+                </span>
+              </div>
+            </div>
+            <div class="form-group row type type-2" id="">
+              <label for="totalDate" class="col-sm-2 col-form-label">Tổng số ngày</label>
+              <div class="col-sm-10 input-group">
+                <input type="number" class="form-control" id="totalDate" />
+              </div>
+            </div>
+            <div class="form-group row type type-2">
+              <label for="" class="col-sm-2 col-form-label">Cách tính</label>
+              <div class="col-sm-10 input-group">
+                <label class="radio-inline">
+                  <input type="radio" name="optCalc" value="1" checked />Đủ số lượng ngày đã chọn
+                </label>
+                <label class="radio-inline"> <input type="radio" name="optCalc" value="2" />Đúng thời gian </label>
+              </div>
+            </div>
+            <div class="form-group row">
+              <div class="col-sm-2">Ngoại trừ</div>
+              <div class="col-sm-10">
+                <div class="form-check">
+                  <input class="form-check-input" name="date[]" type="checkbox" id="monday" value="1" />
+                  <label class="form-check-label" for="monday">Thứ 2</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" name="date[]" type="checkbox" id="tuesday" value="2" />
+                  <label class="form-check-label" for="tuesday">Thứ 3</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" name="date[]" type="checkbox" id="wednesday" value="3" />
+                  <label class="form-check-label" for="wednesday">Thứ 4</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" name="date[]" type="checkbox" id="thursday" value="4" />
+                  <label class="form-check-label" for="thursday">Thứ 5</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" name="date[]" type="checkbox" id="friday" value="5" />
+                  <label class="form-check-label" for="friday">Thứ 6</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" name="date[]" type="checkbox" id="saturday" value="6" />
+                  <label class="form-check-label" for="saturday">Thứ 7</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" name="date[]" type="checkbox" id="sunday" value="7" />
+                  <label class="form-check-label" for="sunday">Chủ nhật</label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group row">
+              <div class="col-sm-10">
+                <button type="button" class="btn btn-primary" id="btnAction">Tính toán</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <table class="table table-bordered table-condensed" id="tblResult">
+            <thead>
+              <tr>
+                <th>Thứ 2</th>
+                <th>Thứ 3</th>
+                <th>Thứ 4</th>
+                <th>Thứ 5</th>
+                <th>Thứ 6</th>
+                <th>Thứ 7</th>
+                <th>Chủ nhật</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+      integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+      a
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.3/js/bootstrap.min.js"
+      integrity="sha512-8qmis31OQi6hIRgvkht0s6mCOittjMa9GMqtK9hes5iEQBQE/Ca6yGE5FsW36vyipGoWQswBj/QBm2JR086Rkw=="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+      integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/js/bootstrap-datetimepicker.min.js"
+      integrity="sha512-GDey37RZAxFkpFeJorEUwNoIbkTwsyC736KNSYucu1WJWFK9qTdzYub8ATxktr6Dwke7nbFaioypzbDOQykoRg=="
+      crossorigin="anonymous"
+    ></script>
+
+    <script type="text/javascript" src="./script.js"></script>
+  </body>
+</html>
