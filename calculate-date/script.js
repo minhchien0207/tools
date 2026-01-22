@@ -38,6 +38,7 @@ $(document).ready(function () {
       });
     }
 
+    let lastDate = null;
     if ($('input[name=optRadio]:checked').val() == 1) {
       if ($('#eDate').val() == '') {
         alert('Vui lòng nhập ngày kết thúc!!!');
@@ -67,6 +68,7 @@ $(document).ready(function () {
           ];
           countDate++;
         }
+        lastDate = moment(sDate).format('DD/MM/YYYY');
         sDate = new Date(moment(sDate, 'YYYYMMDD', true).add('days', 1).format());
       }
     } else {
@@ -82,11 +84,12 @@ $(document).ready(function () {
       let tempTotal = 0;
       const typeCalc = $('input[name=optCalc]:checked').val();
       while (tempTotal < +$('#totalDate').val()) {
+        const currentDate = moment(sDate);
         if (lstChoose.length > 0) {
-          if (!lstChoose.includes(moment(sDate).isoWeekday())) {
-            arrResult[moment(sDate).isoWeekday()] = [
-              ...arrResult[moment(sDate).isoWeekday()],
-              moment(sDate).format('DD/MM/YYYY'),
+          if (!lstChoose.includes(currentDate.isoWeekday())) {
+            arrResult[currentDate.isoWeekday()] = [
+              ...arrResult[currentDate.isoWeekday()],
+              currentDate.format('DD/MM/YYYY'),
             ];
             countDate++;
             if (typeCalc == 1) {
@@ -94,15 +97,16 @@ $(document).ready(function () {
             }
           }
         } else {
-          arrResult[moment(sDate).isoWeekday()] = [
-            ...arrResult[moment(sDate).isoWeekday()],
-            moment(sDate).format('DD/MM/YYYY'),
+          arrResult[currentDate.isoWeekday()] = [
+            ...arrResult[currentDate.isoWeekday()],
+            currentDate.format('DD/MM/YYYY'),
           ];
           countDate++;
           if (typeCalc == 1) {
             tempTotal++;
           }
         }
+        lastDate = currentDate.format('DD/MM/YYYY');
         sDate = new Date(moment(sDate, 'YYYYMMDD', true).add('days', 1).format());
         if (typeCalc == 2) {
           tempTotal++;
@@ -111,7 +115,6 @@ $(document).ready(function () {
     }
 
     let lastRowEachCol = '<tr>';
-    let lastRowTotal = `<tr><td colspan="7">Tổng số ngày: <code>${countDate}</code></td></tr>`;
     $.each(arrResult, function (i, e) {
       const length = e.length;
       if (length > 0 && length > maxRow) {
@@ -125,16 +128,18 @@ $(document).ready(function () {
       for (let i = 0; i < maxRow; i++) {
         html += `<tr>`;
         $.each(arrResult, function (j, e) {
-          if (typeof arrResult[j][i] !== 'undefined') {
-            html += `<td>${arrResult[j][i]}</td>`;
-          } else {
-            html += '<td></td>';
-          }
+          html += `<td class="${
+            arrResult?.[j]?.[i] === lastDate
+              ? 'bg-success'
+              : arrResult?.[j]?.[i] === $('#sDate').val()
+                ? 'bg-warning'
+                : ''
+          }">${arrResult?.[j]?.[i] ?? ''}</td>`;
         });
         html += `</tr>`;
       }
       html += lastRowEachCol;
-      html += lastRowTotal;
+      html += `<tr><td colspan="7">Tổng số ngày: <code>${countDate}</code></td></tr>`;
       $('#tblResult tbody').html(html);
     }
   });
