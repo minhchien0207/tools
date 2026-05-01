@@ -1,0 +1,30 @@
+{
+  "name": "calculate-date-vue",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@primeuix/themes": "^2.0.3",
+    "@tailwindcss/vite": "^4.2.4",
+    "@vueuse/core": "^14.3.0",
+    "date-fns": "^4.1.0",
+    "primevue": "^4.5.5",
+    "tailwindcss": "^4.2.4",
+    "vue": "^3.5.33"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "prettier": "^3.8.3",
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10",
+    "vue-tsc": "^3.2.7"
+  }
+}
