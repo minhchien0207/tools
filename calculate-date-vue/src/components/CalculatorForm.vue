@@ -12,13 +12,13 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "update:calcType", value: string): void;
-  (e: "update:startDate", value: Date | null): void;
-  (e: "update:endDate", value: Date | null): void;
-  (e: "update:totalDays", value: number | null): void;
-  (e: "update:methodType", value: string): void;
-  (e: "update:excludedDays", value: number[]): void;
-  (e: "calculate"): void;
+  'update:calcType': [value: string];
+  'update:startDate': [value: any];
+  'update:endDate': [value: any];
+  'update:totalDays': [value: number | null];
+  'update:methodType': [value: string];
+  'update:excludedDays': [value: number[]];
+  'calculate': [];
 }>();
 </script>
 
