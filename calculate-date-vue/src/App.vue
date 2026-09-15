@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { nextTick, ref } from "vue";
 import { useDateCalculator } from "@/composables/useDateCalculator";
 import CalculatorForm from "@/components/CalculatorForm.vue";
+import CriteriaSummary from "@/components/CriteriaSummary.vue";
 import ResultDisplay from "@/components/ResultDisplay.vue";
 
 const {
@@ -15,38 +17,52 @@ const {
   totalCount,
   calculate,
 } = useDateCalculator();
+
+/** Full form while editing; compact summary after a successful calculate. */
+const editing = ref(true);
+
+const onCalculate = async () => {
+  if (!calculate()) return;
+  editing.value = false;
+  await nextTick();
+  document.querySelector(".result-card")?.scrollIntoView({
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth",
+    block: "start",
+  });
+};
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-linear-to-br from-slate-50 to-blue-100/50 px-4 py-10 font-sans text-gray-800 sm:px-6 lg:px-8"
-  >
-    <div class="mx-auto max-w-5xl space-y-8">
-      <!-- Header -->
-      <div class="text-center">
-        <h1
-          class="bg-linear-to-r from-slate-700 to-blue-800 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent"
-        >
-          Công cụ Tính toán Ngày
-        </h1>
-        <p class="mx-auto mt-3 max-w-2xl text-base text-slate-500">
-          Nhanh chóng và chính xác với giao diện hiện đại, chuyên nghiệp
-        </p>
-      </div>
+  <div class="app-shell">
+    <div class="mx-auto max-w-5xl space-y-7 px-4 py-10 sm:px-6 lg:px-8">
+      <header class="text-center">
+        <h1 class="app-title">Công cụ Tính toán Ngày</h1>
+        <p class="app-subtitle">Tính khoảng ngày hoặc cộng dồn, có loại trừ thứ</p>
+      </header>
 
-      <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        <!-- Form Section -->
+      <div class="flex flex-col gap-5">
         <CalculatorForm
+          v-if="editing"
           v-model:calcType="calcType"
           v-model:startDate="startDate"
           v-model:endDate="endDate"
           v-model:totalDays="totalDays"
           v-model:methodType="methodType"
           v-model:excludedDays="excludedDays"
-          @calculate="calculate"
+          @calculate="onCalculate"
         />
-
-        <!-- Result Section -->
+        <CriteriaSummary
+          v-else
+          :calcType="calcType"
+          :startDate="startDate"
+          :endDate="endDate"
+          :totalDays="totalDays"
+          :methodType="methodType"
+          :excludedDays="excludedDays"
+          @edit="editing = true"
+        />
         <ResultDisplay :result="result" :maxRow="maxRow" :totalCount="totalCount" />
       </div>
     </div>
@@ -56,57 +72,121 @@ const {
 <style>
 @reference "tailwindcss";
 
+.app-shell {
+  min-height: 100dvh;
+  font-family:
+    system-ui,
+    -apple-system,
+    "SF Pro Text",
+    "Segoe UI",
+    sans-serif;
+  color: #1c1c1e;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(0, 122, 255, 0.08), transparent 60%),
+    #f2f2f7;
+}
+
+.app-title {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-optical-sizing: auto;
+  color: #1c1c1e;
+}
+
+.app-subtitle {
+  margin: 0.5rem auto 0;
+  max-width: 28rem;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: #8e8e93;
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.28s ease-out;
 }
 
 .animate-scale-in {
-  animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: scaleIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
   transform-origin: top center;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(5px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.97) translateY(10px);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1);
   }
 }
 
-/* Ensure inputs take up full width properly */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-scale-in {
+    animation: none;
+  }
+}
+
 .p-datepicker {
-  @apply w-full;
-}
-
-/* Customizing PrimeVue Input to match our theme */
-.p-datepicker .p-inputtext {
-  @apply rounded-r-none border-gray-200 shadow-xs transition-all duration-200;
-}
-
-.p-datepicker .p-inputtext:focus {
-  @apply border-blue-400 ring-2 ring-blue-100 outline-hidden;
-}
-
-/* Fix for broken icon layout in some browsers */
-.p-datepicker.p-inputwrapper {
   @apply flex w-full;
 }
 
-.p-datepicker .p-datepicker-trigger {
-  @apply rounded-l-none border-l-0 border-gray-200 bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100;
+.p-datepicker .p-datepicker-input {
+  border-radius: 0.625rem 0 0 0.625rem;
+  border-color: #d2d2d7;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: none;
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.p-datepicker .p-datepicker-input:focus {
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
+  outline: none;
+}
+
+.p-datepicker .p-datepicker-dropdown {
+  border-radius: 0 0.625rem 0.625rem 0;
+  border-color: #d2d2d7;
+  border-left: 0;
+  background: #f5f5f7;
+  color: #86868b;
+  transition:
+    background-color 120ms ease-out,
+    transform 100ms ease-out;
+}
+
+.p-datepicker .p-datepicker-dropdown:hover {
+  background: #e8e8ed;
+  color: #1d1d1f;
+}
+
+.p-datepicker .p-datepicker-dropdown:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-shell {
+    background: #f2f2f7;
+  }
+
+  .p-datepicker .p-datepicker-input {
+    background: #fff;
+  }
 }
 </style>

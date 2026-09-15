@@ -1,144 +1,158 @@
 <script setup lang="ts">
+import { nextTick, ref, watch } from "vue";
+import { useInfiniteScroll } from "@vueuse/core";
 import type { ResultData } from "@/composables/useDateCalculator";
 import { daysOfWeek } from "@/composables/useDateCalculator";
 
-defineProps<{
+const props = defineProps<{
   result: ResultData | null;
   maxRow: number;
   totalCount: number;
 }>();
+
+const shortLabel = (label: string) =>
+  label === "Chủ nhật" ? "CN" : label.replace("Thứ ", "T");
+
+const shortDate = (date: string) => date.slice(0, 5);
+
+/** Initial / per-scroll batch size — keeps DOM light until needed. */
+const PAGE = 20;
+
+const scroller = ref<HTMLElement | null>(null);
+const visibleRows = ref(PAGE);
+const edgeTop = ref(false);
+const edgeBottom = ref(false);
+
+const updateEdges = () => {
+  const el = scroller.value;
+  if (!el) {
+    edgeTop.value = false;
+    edgeBottom.value = false;
+    return;
+  }
+  const { scrollTop, scrollHeight, clientHeight } = el;
+  edgeTop.value = scrollTop > 2;
+  edgeBottom.value = scrollTop + clientHeight < scrollHeight - 2;
+};
+
+const { isLoading, reset } = useInfiniteScroll(
+  scroller,
+  () => {
+    visibleRows.value = Math.min(visibleRows.value + PAGE, props.maxRow);
+    nextTick(updateEdges);
+  },
+  {
+    distance: 80,
+    interval: 100,
+    canLoadMore: () => !!props.result && visibleRows.value < props.maxRow,
+  },
+);
+
+watch(
+  () => [props.result, props.maxRow] as const,
+  async () => {
+    visibleRows.value = PAGE;
+    reset();
+    await nextTick();
+    updateEdges();
+  },
+);
 </script>
 
 <template>
-  <div class="lg:col-span-7">
+  <div>
     <div
       v-if="result"
-      class="animate-scale-in flex h-full flex-col overflow-hidden rounded-3xl border border-white/60 bg-white/90 shadow-2xl backdrop-blur-md"
+      class="animate-scale-in result-card flex max-h-[min(70dvh,52rem)] flex-col overflow-hidden"
     >
-      <div
-        class="flex items-center justify-between border-b border-gray-100 bg-white px-6 py-5"
-      >
-        <h2 class="flex items-center gap-2 text-xl font-bold text-gray-800">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6 text-indigo-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          Bảng Kết Quả
+      <!-- Fixed chrome: title -->
+      <div class="result-title shrink-0">
+        <h2 class="text-[1.0625rem] font-semibold tracking-[-0.02em] text-[#1c1c1e]">
+          Bảng kết quả
         </h2>
+        <span class="text-sm tabular-nums text-[#8e8e93]">{{ totalCount }} ngày</span>
       </div>
 
-      <div class="grow overflow-x-auto p-4">
-        <table class="w-full min-w-[600px] border-collapse">
-          <thead>
-            <tr>
-              <th
-                v-for="day in daysOfWeek"
-                :key="day.value"
-                class="w-1/7 border-b-2 border-gray-100 px-2 pt-2 pb-4 text-center text-sm font-semibold tracking-wider text-gray-500 uppercase"
-              >
-                {{ day.label }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="text-sm">
-            <!-- Rows -->
-            <tr
-              v-for="i in maxRow"
-              :key="i"
-              class="group transition-colors hover:bg-indigo-50/30"
-            >
-              <td v-for="day in 7" :key="day" class="h-12 p-2 text-center">
-                <div
-                  v-if="result.data[day][i - 1]"
-                  class="inline-flex items-center justify-center rounded-lg px-2.5 py-1.5 font-medium shadow-sm transition-all duration-200"
-                  :class="{
-                    'border border-emerald-200 bg-emerald-50 text-emerald-700 ring-4 ring-emerald-500/10':
-                      result.data[day][i - 1] === result.lastDate,
-                    'border border-amber-200 bg-amber-50 text-amber-700 ring-4 ring-amber-500/10':
-                      result.data[day][i - 1] === result.startDate,
-                    'border border-slate-100 bg-white text-slate-600 shadow-xs group-hover:border-blue-200':
-                      result.data[day][i - 1] !== result.lastDate &&
-                      result.data[day][i - 1] !== result.startDate,
-                  }"
-                >
-                  {{ result.data[day][i - 1] }}
-                </div>
-              </td>
-            </tr>
-
-            <!-- Empty state for no results -->
-            <tr v-if="maxRow === 0">
-              <td colspan="7" class="py-12 text-center text-gray-400">
-                Không có ngày nào phù hợp
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-if="maxRow === 0" class="px-4 py-12 text-center text-[#8e8e93]">
+        Không có ngày nào phù hợp
       </div>
 
-      <!-- Totals Footer -->
-      <div class="mt-auto">
-        <div class="grid grid-cols-7 border-t border-gray-100 bg-gray-50/50 px-4">
-          <div v-for="day in 7" :key="day" class="p-3 text-center">
-            <div class="mb-1 text-xs text-gray-400">Cột {{ day }}</div>
-            <div class="text-lg font-bold text-gray-700">
-              {{ result.data[day].length }}
-            </div>
+      <template v-else>
+        <!-- Fixed chrome: weekdays -->
+        <div class="week-heads shrink-0" aria-hidden="true">
+          <div v-for="day in daysOfWeek" :key="day.value" class="week-head">
+            {{ shortLabel(day.label) }}
           </div>
         </div>
 
-        <!-- Final Total -->
+        <!-- Scroll only the dates -->
         <div
-          class="flex items-center justify-between bg-linear-to-r from-indigo-500 to-blue-600 px-8 py-6 text-white"
+          ref="scroller"
+          class="week-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+          :class="{ 'edge-top': edgeTop, 'edge-bottom': edgeBottom }"
+          @scroll.passive="updateEdges"
         >
-          <div class="flex items-center gap-3">
-            <div class="rounded-lg bg-white/20 p-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          <div class="week-board">
+            <div v-for="day in daysOfWeek" :key="day.value" class="week-col">
+              <div
+                v-for="(date, idx) in result.data[day.value].slice(0, visibleRows)"
+                :key="`${day.value}-${idx}`"
+                class="day-chip"
+                :class="{
+                  'day-chip--end': date === result.lastDate,
+                  'day-chip--start': date === result.startDate,
+                }"
+                :title="date"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
+                {{ shortDate(date) }}
+              </div>
             </div>
-            <span class="text-lg font-medium text-blue-50">Tổng số ngày hợp lệ</span>
           </div>
-          <div class="flex items-baseline gap-2">
-            <span class="text-4xl font-extrabold tracking-tight">{{ totalCount }}</span>
-            <span class="font-medium text-blue-200">ngày</span>
+          <div
+            v-if="visibleRows < maxRow"
+            class="load-more tabular-nums"
+            aria-live="polite"
+          >
+            {{ isLoading ? "Đang tải…" : `Đã hiện ${visibleRows}/${maxRow} hàng` }}
           </div>
         </div>
-      </div>
+
+        <!-- Fixed chrome: per-day counts + total -->
+        <div class="result-footer shrink-0">
+          <div class="week-counts">
+            <div
+              v-for="day in daysOfWeek"
+              :key="day.value"
+              class="week-count tabular-nums"
+            >
+              {{ result.data[day.value].length }}
+            </div>
+          </div>
+          <div class="total-bar flex items-center justify-between px-5 py-3.5">
+            <span class="text-[0.9375rem] font-medium text-white/90"
+              >Tổng số ngày hợp lệ</span
+            >
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-3xl font-bold tracking-[-0.03em] tabular-nums">{{
+                totalCount
+              }}</span>
+              <span class="text-sm font-medium text-white/70">ngày</span>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
-    <!-- Placeholder when no result -->
     <div
       v-else
-      class="flex h-full min-h-[400px] flex-col items-center justify-center rounded-3xl border-2 border-dashed border-gray-300 bg-white/40 p-12 text-center"
+      class="empty-card flex min-h-[220px] flex-col items-center justify-center p-8 text-center"
     >
       <div
-        class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-blue-50"
+        class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#007aff]/10 text-[#007aff]"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="h-10 w-10 text-blue-300"
+          class="h-6 w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -151,11 +165,204 @@ defineProps<{
           />
         </svg>
       </div>
-      <h3 class="text-lg font-semibold text-gray-700">Chưa có dữ liệu</h3>
-      <p class="mt-2 max-w-sm text-gray-500">
-        Vui lòng điền thông tin vào biểu mẫu bên trái và nhấn "Tính Kết Quả" để xem bảng
-        dữ liệu chi tiết.
+      <h3 class="text-base font-semibold tracking-[-0.01em] text-[#1c1c1e]">Chưa có dữ liệu</h3>
+      <p class="mt-1.5 max-w-sm text-sm leading-relaxed text-[#8e8e93]">
+        Điền biểu mẫu phía trên rồi nhấn “Tính kết quả”.
       </p>
     </div>
   </div>
 </template>
+
+<style scoped>
+.result-card,
+.empty-card {
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 8px 28px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+
+.empty-card {
+  border-style: dashed;
+  border-color: rgba(60, 60, 67, 0.18);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.result-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(60, 60, 67, 0.08);
+}
+
+@media (min-width: 640px) {
+  .result-title {
+    padding-inline: 1.25rem;
+  }
+}
+
+.week-heads,
+.week-counts,
+.week-board {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  width: 100%;
+}
+
+.week-heads {
+  background: rgba(242, 242, 247, 0.92);
+  backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(60, 60, 67, 0.08);
+}
+
+.week-head {
+  padding: 0.625rem 0.125rem;
+  text-align: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #8e8e93;
+}
+
+.week-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* Apple scroll-edge fade instead of hard dividers */
+  mask-image: linear-gradient(#000, #000);
+}
+
+.week-scroll.edge-top {
+  mask-image: linear-gradient(to bottom, transparent, #000 12px, #000);
+}
+
+.week-scroll.edge-bottom {
+  mask-image: linear-gradient(to bottom, #000, #000 calc(100% - 12px), transparent);
+}
+
+.week-scroll.edge-top.edge-bottom {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent
+  );
+}
+
+.week-board {
+  align-items: start;
+}
+
+.week-col {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.5rem 0.25rem 0.75rem;
+  border-right: 1px solid rgba(60, 60, 67, 0.08);
+}
+
+.week-col:last-child {
+  border-right: none;
+}
+
+.load-more {
+  padding: 0.5rem 0.75rem 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #8e8e93;
+}
+
+.result-footer {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.04);
+}
+
+.week-counts {
+  border-top: 1px solid rgba(60, 60, 67, 0.08);
+  background: rgba(242, 242, 247, 0.85);
+}
+
+.week-count {
+  padding: 0.5rem 0.125rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1c1c1e;
+  border-right: 1px solid rgba(60, 60, 67, 0.08);
+}
+
+.week-count:last-child {
+  border-right: none;
+}
+
+.day-chip {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(60, 60, 67, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.35rem 0.1rem;
+  font-size: clamp(0.625rem, 2.4vw, 0.8125rem);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: #3a3a3c;
+  white-space: nowrap;
+}
+
+.day-chip--start {
+  border-color: rgba(255, 149, 0, 0.35);
+  background: rgba(255, 149, 0, 0.12);
+  color: #c93400;
+}
+
+.day-chip--end {
+  border-color: rgba(52, 199, 89, 0.4);
+  background: rgba(52, 199, 89, 0.12);
+  color: #248a3d;
+}
+
+.total-bar {
+  background: #007aff;
+  color: white;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .result-card,
+  .empty-card,
+  .result-title,
+  .result-footer {
+    background: #fff;
+    backdrop-filter: none;
+  }
+
+  .week-heads,
+  .week-counts {
+    background: #f2f2f7;
+    backdrop-filter: none;
+  }
+
+  .week-scroll.edge-top,
+  .week-scroll.edge-bottom,
+  .week-scroll.edge-top.edge-bottom {
+    mask-image: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-scroll {
+    scroll-behavior: auto;
+  }
+}
+</style>

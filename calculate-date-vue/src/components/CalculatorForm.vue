@@ -12,192 +12,386 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'update:calcType': [value: string];
-  'update:startDate': [value: any];
-  'update:endDate': [value: any];
-  'update:totalDays': [value: number | null];
-  'update:methodType': [value: string];
-  'update:excludedDays': [value: number[]];
-  'calculate': [];
+  "update:calcType": [value: string];
+  "update:startDate": [value: any];
+  "update:endDate": [value: any];
+  "update:totalDays": [value: number | null];
+  "update:methodType": [value: string];
+  "update:excludedDays": [value: number[]];
+  calculate: [];
 }>();
+
+const shortDay = (label: string) =>
+  label === "Chủ nhật" ? "CN" : label.replace("Thứ ", "T");
+
+const toggleExcluded = (value: number) => {
+  const next = props.excludedDays.includes(value)
+    ? props.excludedDays.filter((d) => d !== value)
+    : [...props.excludedDays, value];
+  emit("update:excludedDays", next);
+};
 </script>
 
 <template>
-  <div
-    class="relative h-fit overflow-hidden rounded-3xl border border-white bg-white/70 shadow-xl backdrop-blur-md lg:col-span-5"
-  >
-    <div
-      class="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-blue-400 to-indigo-400"
-    ></div>
-    <div class="space-y-6 p-6 sm:p-8">
-      <!-- Kiểu Tính -->
-      <div class="space-y-3">
-        <label class="block text-sm font-semibold text-gray-700">Kiểu tính</label>
-        <div class="flex flex-col gap-3">
-          <label
-            class="group inline-flex cursor-pointer items-center rounded-xl border p-3 transition-colors hover:bg-blue-50"
-            :class="
-              calcType === '1' ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200'
-            "
-          >
+  <div class="surface-card relative h-fit overflow-hidden">
+    <div class="form-body">
+      <!-- Kiểu tính: segmented control (1 hàng) -->
+      <div class="field">
+        <div class="field-label">Kiểu tính</div>
+        <div class="segment" role="radiogroup" aria-label="Kiểu tính">
+          <label class="segment-item" :class="{ 'is-on': calcType === '1' }">
             <input
+              class="sr-only"
               type="radio"
-              :value="'1'"
+              name="calcType"
+              value="1"
               :checked="calcType === '1'"
               @change="emit('update:calcType', '1')"
-              class="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span
-              class="ml-3 font-medium text-gray-700 transition-colors group-hover:text-blue-700"
-              >Tính theo khoảng ngày</span
-            >
+            Khoảng ngày
           </label>
-          <label
-            class="group inline-flex cursor-pointer items-center rounded-xl border p-3 transition-colors hover:bg-blue-50"
-            :class="
-              calcType === '2' ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200'
-            "
-          >
+          <label class="segment-item" :class="{ 'is-on': calcType === '2' }">
             <input
+              class="sr-only"
               type="radio"
-              :value="'2'"
+              name="calcType"
+              value="2"
               :checked="calcType === '2'"
               @change="emit('update:calcType', '2')"
-              class="h-5 w-5 border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span
-              class="ml-3 font-medium text-gray-700 transition-colors group-hover:text-blue-700"
-              >Cộng dồn số ngày</span
-            >
+            Cộng dồn
           </label>
         </div>
       </div>
 
-      <!-- Ngày bắt đầu -->
-      <div class="space-y-2">
-        <label class="block text-sm font-semibold text-gray-700">Ngày bắt đầu</label>
-        <DatePicker
-          :modelValue="startDate"
-          @update:modelValue="emit('update:startDate', $event)"
-          dateFormat="dd/mm/yy"
-          showIcon
-          placeholder="Chọn ngày"
-          fluid
-        />
+      <!-- Ngày: 2 cột ngang -->
+      <div class="date-row">
+        <div class="field">
+          <div class="field-label">Ngày bắt đầu</div>
+          <DatePicker
+            :modelValue="startDate"
+            @update:modelValue="emit('update:startDate', $event)"
+            dateFormat="dd/mm/yy"
+            showIcon
+            placeholder="Chọn ngày"
+            fluid
+          />
+        </div>
+
+        <div v-if="calcType === '1'" class="field animate-fade-in">
+          <div class="field-label">Ngày kết thúc</div>
+          <DatePicker
+            :modelValue="endDate"
+            @update:modelValue="emit('update:endDate', $event)"
+            dateFormat="dd/mm/yy"
+            showIcon
+            placeholder="Chọn ngày"
+            fluid
+          />
+        </div>
+
+        <div v-else class="field animate-fade-in">
+          <div class="field-label">Tổng số ngày</div>
+          <input
+            type="number"
+            :value="totalDays"
+            @input="
+              emit(
+                'update:totalDays',
+                ($event.target as HTMLInputElement).valueAsNumber,
+              )
+            "
+            class="field-input"
+            placeholder="Nhập số ngày"
+          />
+        </div>
       </div>
 
-      <!-- Ngày kết thúc (Nếu kiểu tính 1) -->
-      <div v-if="calcType === '1'" class="animate-fade-in space-y-2">
-        <label class="block text-sm font-semibold text-gray-700">Ngày kết thúc</label>
-        <DatePicker
-          :modelValue="endDate"
-          @update:modelValue="emit('update:endDate', $event)"
-          dateFormat="dd/mm/yy"
-          showIcon
-          placeholder="Chọn ngày"
-          fluid
-        />
-      </div>
-
-      <!-- Tổng số ngày (Nếu kiểu tính 2) -->
-      <div v-if="calcType === '2'" class="animate-fade-in space-y-2">
-        <label class="block text-sm font-semibold text-gray-700">Tổng số ngày</label>
-        <input
-          type="number"
-          :value="totalDays"
-          @input="emit('update:totalDays', ($event.target as HTMLInputElement).valueAsNumber)"
-          class="w-full rounded-lg border border-gray-300 px-4 py-2 shadow-sm transition-shadow focus:border-blue-500 focus:ring-blue-500"
-          placeholder="Nhập số ngày"
-        />
-      </div>
-
-      <!-- Cách tính (Nếu kiểu tính 2) -->
-      <div v-if="calcType === '2'" class="animate-fade-in space-y-3">
-        <label class="block text-sm font-semibold text-gray-700">Cách tính</label>
-        <div class="flex flex-col gap-3">
-          <label class="inline-flex cursor-pointer items-center">
+      <!-- Cách tính (type 2): segmented ngang -->
+      <div v-if="calcType === '2'" class="field animate-fade-in">
+        <div class="field-label">Cách tính</div>
+        <div class="segment segment--wrap" role="radiogroup" aria-label="Cách tính">
+          <label class="segment-item" :class="{ 'is-on': methodType === '1' }">
             <input
+              class="sr-only"
               type="radio"
-              :value="'1'"
+              name="methodType"
+              value="1"
               :checked="methodType === '1'"
               @change="emit('update:methodType', '1')"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500"
             />
-            <span class="ml-2 text-sm text-gray-700"
-              >Đủ số lượng ngày chọn
-              <span class="text-xs text-gray-500">(Bỏ qua ngày loại trừ)</span></span
-            >
+            Đủ số ngày chọn
           </label>
-          <label class="inline-flex cursor-pointer items-center">
+          <label class="segment-item" :class="{ 'is-on': methodType === '2' }">
             <input
+              class="sr-only"
               type="radio"
-              :value="'2'"
+              name="methodType"
+              value="2"
               :checked="methodType === '2'"
               @change="emit('update:methodType', '2')"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500"
             />
-            <span class="ml-2 text-sm text-gray-700">Đúng thời gian thực tế</span>
+            Đúng thời gian thực tế
           </label>
         </div>
       </div>
 
-      <!-- Ngoại trừ -->
-      <div class="space-y-3 border-t border-gray-100 pt-2">
-        <label class="block text-sm font-semibold text-gray-700"
-          >Loại trừ thứ trong tuần</label
-        >
-        <div class="grid grid-cols-2 gap-3">
-          <label
+      <!-- Loại trừ: 1 hàng pill -->
+      <div class="field field--exclude">
+        <div class="field-label">Loại trừ thứ</div>
+        <div class="day-pills" role="group" aria-label="Loại trừ thứ trong tuần">
+          <button
             v-for="day in daysOfWeek"
             :key="day.value"
-            class="group inline-flex cursor-pointer items-center"
+            type="button"
+            class="day-pill"
+            :class="{ 'is-on': excludedDays.includes(day.value) }"
+            :aria-pressed="excludedDays.includes(day.value)"
+            @click="toggleExcluded(day.value)"
           >
-            <input
-              type="checkbox"
-              :value="day.value"
-              :checked="excludedDays.includes(day.value)"
-              @change="
-                (e) => {
-                  const target = e.target as HTMLInputElement;
-                  const newExcludedDays = target.checked
-                    ? [...excludedDays, day.value]
-                    : excludedDays.filter((d) => d !== day.value);
-                  emit('update:excludedDays', newExcludedDays);
-                }
-              "
-              class="h-4 w-4 rounded border-gray-300 text-indigo-600 transition-colors focus:ring-indigo-500"
-            />
-            <span
-              class="ml-2 text-sm text-gray-600 transition-colors group-hover:text-indigo-700"
-              >{{ day.label }}</span
-            >
-          </label>
+            {{ shortDay(day.label) }}
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="border-t border-gray-100 bg-gray-50/80 p-6 backdrop-blur-sm">
-      <button
-        @click="emit('calculate')"
-        class="inline-flex w-full transform items-center justify-center rounded-xl border border-transparent bg-linear-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-base font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-      >
-        <svg
-          class="mr-2 -ml-1 h-5 w-5"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-          />
-        </svg>
-        Tính Kết Quả
+    <div class="form-actions">
+      <button type="button" class="primary-btn" @click="emit('calculate')">
+        Tính kết quả
       </button>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Apple-soft palette: #1d1d1f / #86868b / #0071e3 / #e8e8ed / #d2d2d7 */
+.surface-card {
+  border-radius: 1.125rem;
+  border: 1px solid rgba(210, 210, 215, 0.7);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 4px 18px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+.form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem 1rem 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .form-body {
+    padding: 1.125rem 1.25rem 1rem;
+    gap: 1rem;
+  }
+}
+
+.field {
+  min-width: 0;
+}
+
+.field-label {
+  margin-bottom: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #86868b;
+}
+
+.date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 359px) {
+  .date-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border-radius: 0.625rem;
+  background: #e8e8ed;
+}
+
+.segment--wrap {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 359px) {
+  .segment--wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.segment-item {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+  transition:
+    background-color 120ms ease-out,
+    box-shadow 120ms ease-out,
+    transform 100ms ease-out;
+}
+
+.segment-item:active {
+  transform: scale(0.98);
+}
+
+.segment-item.is-on {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.field-input {
+  width: 100%;
+  border-radius: 0.625rem;
+  border: 1px solid #d2d2d7;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9375rem;
+  color: #1d1d1f;
+  outline: none;
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.field-input:focus {
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
+}
+
+.field--exclude {
+  padding-top: 0.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.day-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.day-pill {
+  flex: 1 1 calc(14.28% - 0.375rem);
+  min-width: 2.5rem;
+  border: 1px solid #d2d2d7;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.4rem 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out,
+    color 120ms ease-out,
+    transform 100ms ease-out;
+}
+
+.day-pill:active {
+  transform: scale(0.96);
+}
+
+.day-pill.is-on {
+  border-color: rgba(0, 113, 227, 0.35);
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+}
+
+.form-actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(245, 245, 247, 0.65);
+  padding: 0.75rem 1rem 1rem;
+  backdrop-filter: blur(12px);
+}
+
+@media (min-width: 640px) {
+  .form-actions {
+    padding: 0.875rem 1.25rem 1.125rem;
+  }
+}
+
+.primary-btn {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.75rem;
+  background: #0071e3;
+  padding: 0.75rem 1.125rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset;
+  transition:
+    background-color 120ms ease-out,
+    transform 100ms ease-out;
+}
+
+.primary-btn:hover {
+  background: #0077ed;
+}
+
+.primary-btn:active {
+  transform: scale(0.98);
+  background: #006edb;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .surface-card,
+  .form-actions {
+    background: #fff;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment-item,
+  .day-pill,
+  .primary-btn {
+    transition: none;
+  }
+
+  .segment-item:active,
+  .day-pill:active,
+  .primary-btn:active {
+    transform: none;
+  }
+}
+</style>

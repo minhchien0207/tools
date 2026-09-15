@@ -35,10 +35,10 @@ export function useDateCalculator() {
   const maxRow = ref<number>(0);
   const totalCount = ref<number>(0);
 
-  const calculate = () => {
+  const calculate = (): boolean => {
     if (!startDate.value) {
       alert("Vui lòng nhập ngày bắt đầu!!!");
-      return;
+      return false;
     }
 
     const sDate = startOfDay(startDate.value);
@@ -63,13 +63,13 @@ export function useDateCalculator() {
     if (calcType.value === "1") {
       if (!endDate.value) {
         alert("Vui lòng nhập ngày kết thúc!!!");
-        return;
+        return false;
       }
       const eDate = startOfDay(endDate.value);
 
       if (isBefore(eDate, sDate)) {
         alert("Ngày kết thúc phải lớn hơn ngày bắt đầu!!!");
-        return;
+        return false;
       }
 
       let currentDate = sDate;
@@ -86,12 +86,12 @@ export function useDateCalculator() {
     } else {
       if (!totalDays.value) {
         alert("Vui lòng nhập tổng số ngày!!!");
-        return;
+        return false;
       }
 
       if (excludedDays.value.length === 7) {
         alert("Bạn đã ngoại trừ tất cả các ngày trong tuần!");
-        return;
+        return false;
       }
 
       let tempTotal = 0;
@@ -132,6 +132,7 @@ export function useDateCalculator() {
       lastDate,
       startDate: formattedSDate,
     };
+    return true;
   };
 
   return {
