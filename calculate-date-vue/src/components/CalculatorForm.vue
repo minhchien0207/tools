@@ -106,16 +106,34 @@ const removeExcludedDate = (key: string) => {
     props.excludedDates.filter((d) => d !== key),
   );
 };
+
+const segmentItem =
+  "flex cursor-pointer items-center justify-center rounded-lg px-2.5 py-2 text-center text-[0.8125rem] font-medium tracking-[-0.01em] text-[#1d1d1f] transition-[background-color,box-shadow,transform] duration-100 ease-out active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100";
+const segmentOn = "bg-white font-semibold shadow-sm";
 </script>
 
 <template>
-  <div class="surface-card relative h-fit overflow-hidden">
-    <div class="form-body">
-      <!-- Kiểu tính: segmented control (1 hàng) -->
-      <div class="field">
-        <div class="field-label">Kiểu tính</div>
-        <div class="segment" role="radiogroup" aria-label="Kiểu tính">
-          <label class="segment-item" :class="{ 'is-on': calcType === '1' }">
+  <div
+    class="relative h-fit overflow-hidden rounded-[1.125rem] border border-[#d2d2d7]/70 bg-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_18px_rgba(0,0,0,0.04)] backdrop-blur-[20px] backdrop-saturate-150"
+  >
+    <div
+      class="flex flex-col gap-3.5 px-4 pt-4 pb-3.5 sm:gap-4 sm:px-5 sm:pt-4.5 sm:pb-4"
+    >
+      <!-- Kiểu tính -->
+      <div class="min-w-0">
+        <div
+          class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+        >
+          Kiểu tính
+        </div>
+        <div
+          class="grid grid-cols-2 gap-0.5 rounded-[0.625rem] bg-[#e8e8ed] p-0.5"
+          role="radiogroup"
+          aria-label="Kiểu tính"
+        >
+          <label
+            :class="[segmentItem, calcType === '1' ? segmentOn : '']"
+          >
             <input
               class="sr-only"
               type="radio"
@@ -126,7 +144,9 @@ const removeExcludedDate = (key: string) => {
             />
             Khoảng ngày
           </label>
-          <label class="segment-item" :class="{ 'is-on': calcType === '2' }">
+          <label
+            :class="[segmentItem, calcType === '2' ? segmentOn : '']"
+          >
             <input
               class="sr-only"
               type="radio"
@@ -140,10 +160,14 @@ const removeExcludedDate = (key: string) => {
         </div>
       </div>
 
-      <!-- Ngày: 2 cột ngang -->
-      <div class="date-row">
-        <div class="field">
-          <div class="field-label">Ngày bắt đầu</div>
+      <!-- Ngày -->
+      <div class="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
+        <div class="min-w-0">
+          <div
+            class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+          >
+            Ngày bắt đầu
+          </div>
           <DatePicker
             :modelValue="startDate"
             @update:modelValue="emit('update:startDate', $event)"
@@ -154,8 +178,12 @@ const removeExcludedDate = (key: string) => {
           />
         </div>
 
-        <div v-if="calcType === '1'" class="field animate-fade-in">
-          <div class="field-label">Ngày kết thúc</div>
+        <div v-if="calcType === '1'" class="animate-fade-in min-w-0">
+          <div
+            class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+          >
+            Ngày kết thúc
+          </div>
           <DatePicker
             :modelValue="endDate"
             @update:modelValue="emit('update:endDate', $event)"
@@ -166,8 +194,12 @@ const removeExcludedDate = (key: string) => {
           />
         </div>
 
-        <div v-else class="field animate-fade-in">
-          <div class="field-label">Tổng số ngày</div>
+        <div v-else class="animate-fade-in min-w-0">
+          <div
+            class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+          >
+            Tổng số ngày
+          </div>
           <input
             type="number"
             :value="totalDays"
@@ -177,17 +209,27 @@ const removeExcludedDate = (key: string) => {
                 ($event.target as HTMLInputElement).valueAsNumber,
               )
             "
-            class="field-input"
+            class="w-full rounded-[0.625rem] border border-[#d2d2d7] bg-white/90 px-3 py-[0.55rem] text-[0.9375rem] text-[#1d1d1f] outline-none transition-[border-color,box-shadow] duration-100 ease-out focus:border-[#0071e3] focus:shadow-[0_0_0_3px_rgba(0,113,227,0.18)]"
             placeholder="Nhập số ngày"
           />
         </div>
       </div>
 
-      <!-- Cách tính (type 2): segmented ngang -->
-      <div v-if="calcType === '2'" class="field animate-fade-in">
-        <div class="field-label">Cách tính</div>
-        <div class="segment segment--wrap" role="radiogroup" aria-label="Cách tính">
-          <label class="segment-item" :class="{ 'is-on': methodType === '1' }">
+      <!-- Cách tính (type 2) -->
+      <div v-if="calcType === '2'" class="animate-fade-in min-w-0">
+        <div
+          class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+        >
+          Cách tính
+        </div>
+        <div
+          class="grid grid-cols-1 gap-0.5 rounded-[0.625rem] bg-[#e8e8ed] p-0.5 min-[360px]:grid-cols-2"
+          role="radiogroup"
+          aria-label="Cách tính"
+        >
+          <label
+            :class="[segmentItem, methodType === '1' ? segmentOn : '']"
+          >
             <input
               class="sr-only"
               type="radio"
@@ -198,7 +240,9 @@ const removeExcludedDate = (key: string) => {
             />
             Đủ số ngày chọn
           </label>
-          <label class="segment-item" :class="{ 'is-on': methodType === '2' }">
+          <label
+            :class="[segmentItem, methodType === '2' ? segmentOn : '']"
+          >
             <input
               class="sr-only"
               type="radio"
@@ -212,16 +256,28 @@ const removeExcludedDate = (key: string) => {
         </div>
       </div>
 
-      <!-- Loại trừ thứ: 1 hàng pill -->
-      <div class="field field--exclude">
-        <div class="field-label">Loại trừ thứ</div>
-        <div class="day-pills" role="group" aria-label="Loại trừ thứ trong tuần">
+      <!-- Loại trừ thứ -->
+      <div class="min-w-0 border-t border-black/5 pt-1">
+        <div
+          class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+        >
+          Loại trừ thứ
+        </div>
+        <div
+          class="flex flex-wrap gap-1.5"
+          role="group"
+          aria-label="Loại trừ thứ trong tuần"
+        >
           <button
             v-for="day in daysOfWeek"
             :key="day.value"
             type="button"
-            class="day-pill"
-            :class="{ 'is-on': excludedDays.includes(day.value) }"
+            class="min-w-10 flex-1 basis-[calc(14.28%-0.375rem)] cursor-pointer rounded-full border px-[0.35rem] py-[0.4rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
+            :class="
+              excludedDays.includes(day.value)
+                ? 'border-[#0071e3]/35 bg-[#0071e3]/10 text-[#0071e3]'
+                : 'border-[#d2d2d7] bg-white/85 text-[#1d1d1f]'
+            "
             :aria-pressed="excludedDays.includes(day.value)"
             @click="toggleExcluded(day.value)"
           >
@@ -231,9 +287,13 @@ const removeExcludedDate = (key: string) => {
       </div>
 
       <!-- Loại trừ ngày cụ thể -->
-      <div class="field">
-        <div class="field-label">Loại trừ ngày cụ thể</div>
-        <div class="exclude-dates">
+      <div class="min-w-0">
+        <div
+          class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+        >
+          Loại trừ ngày cụ thể
+        </div>
+        <div class="flex flex-col gap-2">
           <DatePicker
             :key="excludePickerKey"
             ref="excludePickerRef"
@@ -246,302 +306,35 @@ const removeExcludedDate = (key: string) => {
             @show="syncExcludePickerMonth"
             @month-change="onExcludeMonthChange"
           />
-          <div v-if="excludedDates.length" class="date-chips">
+          <div v-if="excludedDates.length" class="flex flex-wrap gap-1.5">
             <button
               v-for="key in excludedDates"
               :key="key"
               type="button"
-              class="date-chip"
+              class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#0071e3]/30 bg-[#0071e3]/10 py-[0.3rem] pr-[0.55rem] pl-[0.65rem] text-xs font-medium tracking-[-0.01em] text-[#0071e3] transition-[background-color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
               :title="`Bỏ loại trừ ${key}`"
               @click="removeExcludedDate(key)"
             >
               <span class="tabular-nums">{{ key }}</span>
-              <span class="date-chip-x" aria-hidden="true">×</span>
+              <span class="text-[0.95rem] leading-none opacity-70" aria-hidden="true"
+                >×</span
+              >
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="form-actions">
-      <button type="button" class="primary-btn" @click="emit('calculate')">
+    <div
+      class="border-t border-black/5 bg-[#f5f5f7]/65 px-4 pt-3 pb-4 backdrop-blur-md sm:px-5 sm:pt-3.5 sm:pb-4.5"
+    >
+      <button
+        type="button"
+        class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-[#0071e3] px-4.5 py-3 text-[0.9375rem] font-semibold tracking-[-0.015em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] transition-[background-color,transform] duration-100 ease-out hover:bg-[#0077ed] active:scale-[0.98] active:bg-[#006edb] motion-reduce:transition-none motion-reduce:active:scale-100"
+        @click="emit('calculate')"
+      >
         Tính kết quả
       </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Apple-soft palette: #1d1d1f / #86868b / #0071e3 / #e8e8ed / #d2d2d7 */
-.surface-card {
-  border-radius: 1.125rem;
-  border: 1px solid rgba(210, 210, 215, 0.7);
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.85) inset,
-    0 4px 18px rgba(0, 0, 0, 0.04);
-  backdrop-filter: blur(20px) saturate(160%);
-}
-
-.form-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-  padding: 1rem 1rem 0.875rem;
-}
-
-@media (min-width: 640px) {
-  .form-body {
-    padding: 1.125rem 1.25rem 1rem;
-    gap: 1rem;
-  }
-}
-
-.field {
-  min-width: 0;
-}
-
-.field-label {
-  margin-bottom: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: #86868b;
-}
-
-.date-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-@media (max-width: 359px) {
-  .date-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-.segment {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.2rem;
-  padding: 0.2rem;
-  border-radius: 0.625rem;
-  background: #e8e8ed;
-}
-
-.segment--wrap {
-  grid-template-columns: 1fr 1fr;
-}
-
-@media (max-width: 359px) {
-  .segment--wrap {
-    grid-template-columns: 1fr;
-  }
-}
-
-.segment-item {
-  display: flex;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.625rem;
-  text-align: center;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: #1d1d1f;
-  transition:
-    background-color 120ms ease-out,
-    box-shadow 120ms ease-out,
-    transform 100ms ease-out;
-}
-
-.segment-item:active {
-  transform: scale(0.98);
-}
-
-.segment-item.is-on {
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-  font-weight: 600;
-  color: #1d1d1f;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.field-input {
-  width: 100%;
-  border-radius: 0.625rem;
-  border: 1px solid #d2d2d7;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 0.55rem 0.75rem;
-  font-size: 0.9375rem;
-  color: #1d1d1f;
-  outline: none;
-  transition:
-    border-color 120ms ease-out,
-    box-shadow 120ms ease-out;
-}
-
-.field-input:focus {
-  border-color: #0071e3;
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
-}
-
-.field--exclude {
-  padding-top: 0.25rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.day-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-
-.day-pill {
-  flex: 1 1 calc(14.28% - 0.375rem);
-  min-width: 2.5rem;
-  border: 1px solid #d2d2d7;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  padding: 0.4rem 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 560;
-  letter-spacing: -0.01em;
-  color: #1d1d1f;
-  cursor: pointer;
-  transition:
-    background-color 120ms ease-out,
-    border-color 120ms ease-out,
-    color 120ms ease-out,
-    transform 100ms ease-out;
-}
-
-.day-pill:active {
-  transform: scale(0.96);
-}
-
-.day-pill.is-on {
-  border-color: rgba(0, 113, 227, 0.35);
-  background: rgba(0, 113, 227, 0.1);
-  color: #0071e3;
-}
-
-.exclude-dates {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.date-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-
-.date-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  border: 1px solid rgba(0, 113, 227, 0.28);
-  border-radius: 999px;
-  background: rgba(0, 113, 227, 0.08);
-  padding: 0.3rem 0.55rem 0.3rem 0.65rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: #0071e3;
-  cursor: pointer;
-  transition:
-    background-color 120ms ease-out,
-    transform 100ms ease-out;
-}
-
-.date-chip:active {
-  transform: scale(0.97);
-}
-
-.date-chip-x {
-  font-size: 0.95rem;
-  line-height: 1;
-  opacity: 0.7;
-}
-
-.form-actions {
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  background: rgba(245, 245, 247, 0.65);
-  padding: 0.75rem 1rem 1rem;
-  backdrop-filter: blur(12px);
-}
-
-@media (min-width: 640px) {
-  .form-actions {
-    padding: 0.875rem 1.25rem 1.125rem;
-  }
-}
-
-.primary-btn {
-  display: inline-flex;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 0.75rem;
-  background: #0071e3;
-  padding: 0.75rem 1.125rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  color: #fff;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.22) inset;
-  transition:
-    background-color 120ms ease-out,
-    transform 100ms ease-out;
-}
-
-.primary-btn:hover {
-  background: #0077ed;
-}
-
-.primary-btn:active {
-  transform: scale(0.98);
-  background: #006edb;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .surface-card,
-  .form-actions {
-    background: #fff;
-    backdrop-filter: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .segment-item,
-  .day-pill,
-  .date-chip,
-  .primary-btn {
-    transition: none;
-  }
-
-  .segment-item:active,
-  .day-pill:active,
-  .date-chip:active,
-  .primary-btn:active {
-    transform: none;
-  }
-}
-</style>

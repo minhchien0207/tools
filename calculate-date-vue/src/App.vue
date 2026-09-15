@@ -48,11 +48,21 @@ const onRestoreDate = (date: string) => {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div
+    class="min-h-dvh bg-[radial-gradient(1200px_600px_at_50%_-10%,rgba(0,122,255,0.08),transparent_60%),#f2f2f7] font-[system-ui,-apple-system,'SF_Pro_Text','Segoe_UI',sans-serif] text-[#1c1c1e]"
+  >
     <div class="mx-auto max-w-5xl space-y-7 px-4 py-10 sm:px-6 lg:px-8">
       <header class="text-center">
-        <h1 class="app-title">Công cụ Tính toán Ngày</h1>
-        <p class="app-subtitle">Tính khoảng ngày hoặc cộng dồn, có loại trừ thứ</p>
+        <h1
+          class="text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-bold tracking-[-0.025em] text-[#1c1c1e]"
+        >
+          Công cụ Tính toán Ngày
+        </h1>
+        <p
+          class="mx-auto mt-2 max-w-md text-[0.9375rem] leading-snug tracking-[-0.01em] text-[#8e8e93]"
+        >
+          Tính khoảng ngày hoặc cộng dồn, có loại trừ thứ
+        </p>
       </header>
 
       <div class="flex flex-col gap-5">
@@ -94,47 +104,14 @@ const onRestoreDate = (date: string) => {
 <style>
 @reference "tailwindcss";
 
-.app-shell {
-  min-height: 100dvh;
-  font-family:
-    system-ui,
-    -apple-system,
-    "SF Pro Text",
-    "Segoe UI",
-    sans-serif;
-  color: #1c1c1e;
-  background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(0, 122, 255, 0.08), transparent 60%),
-    #f2f2f7;
-}
-
-.app-title {
-  font-size: clamp(1.75rem, 4vw, 2.25rem);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  font-optical-sizing: auto;
-  color: #1c1c1e;
-}
-
-.app-subtitle {
-  margin: 0.5rem auto 0;
-  max-width: 28rem;
-  font-size: 0.9375rem;
-  line-height: 1.4;
-  letter-spacing: -0.01em;
-  color: #8e8e93;
-}
-
+/* Shared enter animations (Form / Summary / Result). */
 .animate-fade-in {
   animation: fadeIn 0.28s ease-out;
 }
-
 .animate-scale-in {
   animation: scaleIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
   transform-origin: top center;
 }
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -143,7 +120,6 @@ const onRestoreDate = (date: string) => {
     opacity: 1;
   }
 }
-
 @keyframes scaleIn {
   from {
     opacity: 0;
@@ -154,7 +130,6 @@ const onRestoreDate = (date: string) => {
     transform: scale(1);
   }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-scale-in {
@@ -162,10 +137,10 @@ const onRestoreDate = (date: string) => {
   }
 }
 
+/* PrimeVue DatePicker — cannot put utilities on its internals. */
 .p-datepicker {
   @apply flex w-full;
 }
-
 .p-datepicker .p-datepicker-input {
   border-radius: 0.625rem 0 0 0.625rem;
   border-color: #d2d2d7;
@@ -175,13 +150,11 @@ const onRestoreDate = (date: string) => {
     border-color 120ms ease-out,
     box-shadow 120ms ease-out;
 }
-
 .p-datepicker .p-datepicker-input:focus {
   border-color: #0071e3;
   box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
   outline: none;
 }
-
 .p-datepicker .p-datepicker-dropdown {
   border-radius: 0 0.625rem 0.625rem 0;
   border-color: #d2d2d7;
@@ -192,21 +165,14 @@ const onRestoreDate = (date: string) => {
     background-color 120ms ease-out,
     transform 100ms ease-out;
 }
-
 .p-datepicker .p-datepicker-dropdown:hover {
   background: #e8e8ed;
   color: #1d1d1f;
 }
-
 .p-datepicker .p-datepicker-dropdown:active {
   transform: scale(0.97);
 }
-
 @media (prefers-reduced-transparency: reduce) {
-  .app-shell {
-    background: #f2f2f7;
-  }
-
   .p-datepicker .p-datepicker-input {
     background: #fff;
   }

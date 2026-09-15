@@ -157,11 +157,25 @@ const { isLoading, reset } = useInfiniteScroll(
   },
 );
 
+// Reset infinite-scroll window only when the calculation range identity changes
+// (new start date). Exclude/restore rebuilds `result` + `excludedDates` but must
+// keep the user's place in the month list.
 watch(
-  () => [props.result, props.excludedDates, calendarMonths.value.length] as const,
+  () => props.result?.startDate ?? null,
   async () => {
     visibleMonths.value = PAGE;
     reset();
+    await nextTick();
+    updateEdges();
+  },
+);
+
+watch(
+  () => calendarMonths.value.length,
+  async (len) => {
+    if (visibleMonths.value > len) {
+      visibleMonths.value = Math.max(len, 0);
+    }
     await nextTick();
     updateEdges();
   },
