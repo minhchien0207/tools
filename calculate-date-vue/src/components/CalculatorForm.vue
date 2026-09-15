@@ -68,7 +68,11 @@ const applyExcludePickerMonth = () => {
   }
 };
 
-const addExcludedDate = (value: Date | Date[] | null) => {
+// PrimeVue can emit an empty value (`undefined`) and nullable entries for
+// range/multiple selection modes, even though this picker uses single mode.
+const addExcludedDate = (
+  value: Date | Date[] | (Date | null)[] | null | undefined,
+) => {
   const date = Array.isArray(value) ? value[0] : value;
   // Ignore null emits from remount/clear.
   if (!date) return;
