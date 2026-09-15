@@ -12,6 +12,7 @@ const {
   totalDays,
   methodType,
   excludedDays,
+  excludedDates,
   result,
   maxRow,
   totalCount,
@@ -32,6 +33,18 @@ const onCalculate = async () => {
     block: "start",
   });
 };
+
+const onExcludeDate = (date: string) => {
+  if (!excludedDates.value.includes(date)) {
+    excludedDates.value = [...excludedDates.value, date];
+  }
+  calculate();
+};
+
+const onRestoreDate = (date: string) => {
+  excludedDates.value = excludedDates.value.filter((d) => d !== date);
+  calculate();
+};
 </script>
 
 <template>
@@ -51,6 +64,7 @@ const onCalculate = async () => {
           v-model:totalDays="totalDays"
           v-model:methodType="methodType"
           v-model:excludedDays="excludedDays"
+          v-model:excludedDates="excludedDates"
           @calculate="onCalculate"
         />
         <CriteriaSummary
@@ -61,9 +75,17 @@ const onCalculate = async () => {
           :totalDays="totalDays"
           :methodType="methodType"
           :excludedDays="excludedDays"
+          :excludedDates="excludedDates"
           @edit="editing = true"
         />
-        <ResultDisplay :result="result" :maxRow="maxRow" :totalCount="totalCount" />
+        <ResultDisplay
+          :result="result"
+          :maxRow="maxRow"
+          :totalCount="totalCount"
+          :excludedDates="excludedDates"
+          @exclude="onExcludeDate"
+          @restore="onRestoreDate"
+        />
       </div>
     </div>
   </div>

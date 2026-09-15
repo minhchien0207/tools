@@ -1,25 +1,125 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useInfiniteScroll } from "@vueuse/core";
+import {
+  addMonths,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
+  getDate,
+  isBefore,
+  isSameMonth,
+  parse,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import type { ResultData } from "@/composables/useDateCalculator";
 import { daysOfWeek } from "@/composables/useDateCalculator";
+
+type CalCell = {
+  key: string;
+  label: string;
+  inResult: boolean;
+  excluded: boolean;
+};
+
+/** `null` = empty pad (other month / leading-trailing gap). */
+type CalWeek = {
+  id: string;
+  cells: (CalCell | null)[];
+};
+
+type CalMonth = {
+  id: string;
+  label: string;
+  weeks: CalWeek[];
+};
 
 const props = defineProps<{
   result: ResultData | null;
   maxRow: number;
   totalCount: number;
+  excludedDates: string[];
+}>();
+
+const emit = defineEmits<{
+  exclude: [date: string];
+  restore: [date: string];
 }>();
 
 const shortLabel = (label: string) =>
   label === "Chủ nhật" ? "CN" : label.replace("Thứ ", "T");
 
-const shortDate = (date: string) => date.slice(0, 5);
+const parseKey = (key: string) => parse(key, "dd/MM/yyyy", new Date());
 
-/** Initial / per-scroll batch size — keeps DOM light until needed. */
-const PAGE = 20;
+const dateSet = computed(() => {
+  const set = new Set<string>();
+  if (!props.result) return set;
+  for (const list of Object.values(props.result.data)) {
+    for (const d of list) set.add(d);
+  }
+  return set;
+});
+
+const excludedSet = computed(() => new Set(props.excludedDates));
+
+/**
+ * One grid per month (normal calendar): leading/trailing cells empty.
+ * No adjacent-month bleed — month boundary = blank pads + gap.
+ */
+const calendarMonths = computed(() => {
+  if (!props.result?.lastDate) return [] as CalMonth[];
+
+  const rangeStart = parseKey(props.result.startDate);
+  const rangeEnd = parseKey(props.result.lastDate);
+  const months: CalMonth[] = [];
+  let cursor = startOfMonth(rangeStart);
+  const lastMonth = startOfMonth(rangeEnd);
+
+  while (!isBefore(lastMonth, cursor)) {
+    const monthStart = startOfMonth(cursor);
+    const monthEnd = endOfMonth(cursor);
+    const gridFrom = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const gridTo = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const days = eachDayOfInterval({ start: gridFrom, end: gridTo });
+    const weeks: CalWeek[] = [];
+
+    for (let i = 0; i < days.length; i += 7) {
+      const slice = days.slice(i, i + 7);
+      const cells = slice.map((d) => {
+        if (!isSameMonth(d, monthStart)) return null;
+        const key = format(d, "dd/MM/yyyy");
+        return {
+          key,
+          label: String(getDate(d)),
+          inResult: dateSet.value.has(key),
+          excluded: excludedSet.value.has(key),
+        };
+      });
+      if (cells.some(Boolean)) {
+        weeks.push({
+          id: `${format(monthStart, "yyyy-MM")}-${cells.find(Boolean)!.key}`,
+          cells,
+        });
+      }
+    }
+
+    months.push({
+      id: format(monthStart, "yyyy-MM"),
+      label: format(monthStart, "'Tháng' M/yyyy"),
+      weeks,
+    });
+    cursor = addMonths(cursor, 1);
+  }
+
+  return months;
+});
+
+const PAGE = 2;
 
 const scroller = ref<HTMLElement | null>(null);
-const visibleRows = ref(PAGE);
+const visibleMonths = ref(PAGE);
 const edgeTop = ref(false);
 const edgeBottom = ref(false);
 
@@ -35,100 +135,179 @@ const updateEdges = () => {
   edgeBottom.value = scrollTop + clientHeight < scrollHeight - 2;
 };
 
+const onChipClick = (cell: CalCell) => {
+  if (cell.excluded) emit("restore", cell.key);
+  else if (cell.inResult) emit("exclude", cell.key);
+};
+
 const { isLoading, reset } = useInfiniteScroll(
   scroller,
   () => {
-    visibleRows.value = Math.min(visibleRows.value + PAGE, props.maxRow);
+    visibleMonths.value = Math.min(
+      visibleMonths.value + PAGE,
+      calendarMonths.value.length,
+    );
     nextTick(updateEdges);
   },
   {
     distance: 80,
     interval: 100,
-    canLoadMore: () => !!props.result && visibleRows.value < props.maxRow,
+    canLoadMore: () =>
+      !!props.result && visibleMonths.value < calendarMonths.value.length,
   },
 );
 
 watch(
-  () => [props.result, props.maxRow] as const,
+  () => [props.result, props.excludedDates, calendarMonths.value.length] as const,
   async () => {
-    visibleRows.value = PAGE;
+    visibleMonths.value = PAGE;
     reset();
     await nextTick();
     updateEdges();
   },
 );
+
+const cellBase =
+  "relative flex min-h-[2.15rem] w-full items-center justify-center rounded-lg px-0.5 py-[0.3rem] text-[clamp(0.625rem,2.2vw,0.8125rem)] font-medium tracking-[-0.02em] whitespace-nowrap tabular-nums";
 </script>
 
 <template>
   <div>
     <div
       v-if="result"
-      class="animate-scale-in result-card flex max-h-[min(70dvh,52rem)] flex-col overflow-hidden"
+      class="animate-scale-in flex max-h-[min(70dvh,52rem)] flex-col overflow-hidden rounded-[1.25rem] border border-white/70 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_8px_28px_rgba(0,0,0,0.06)] backdrop-blur-[20px] backdrop-saturate-150"
     >
-      <!-- Fixed chrome: title -->
-      <div class="result-title shrink-0">
+      <div
+        class="flex shrink-0 items-center justify-between gap-3 border-b border-black/10 bg-white/70 px-4 py-3.5 backdrop-blur-md backdrop-saturate-150 sm:px-5"
+      >
         <h2 class="text-[1.0625rem] font-semibold tracking-[-0.02em] text-[#1c1c1e]">
           Bảng kết quả
         </h2>
-        <span class="text-sm tabular-nums text-[#8e8e93]">{{ totalCount }} ngày</span>
+        <span class="text-sm text-[#8e8e93] tabular-nums">{{ totalCount }} ngày</span>
       </div>
 
-      <div v-if="maxRow === 0" class="px-4 py-12 text-center text-[#8e8e93]">
+      <div v-if="calendarMonths.length === 0" class="px-4 py-12 text-center text-[#8e8e93]">
         Không có ngày nào phù hợp
       </div>
 
       <template v-else>
-        <!-- Fixed chrome: weekdays -->
-        <div class="week-heads shrink-0" aria-hidden="true">
-          <div v-for="day in daysOfWeek" :key="day.value" class="week-head">
+        <div
+          class="grid w-full shrink-0 grid-cols-7 border-b border-black/10 bg-[#f2f2f7]/90 backdrop-blur-md backdrop-saturate-150"
+          aria-hidden="true"
+        >
+          <div
+            v-for="day in daysOfWeek"
+            :key="day.value"
+            class="px-0.5 py-2.5 text-center text-[0.6875rem] font-semibold tracking-[0.02em] text-[#8e8e93]"
+          >
             {{ shortLabel(day.label) }}
           </div>
         </div>
 
-        <!-- Scroll only the dates -->
         <div
           ref="scroller"
-          class="week-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+          class="week-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain motion-reduce:scroll-auto"
           :class="{ 'edge-top': edgeTop, 'edge-bottom': edgeBottom }"
           @scroll.passive="updateEdges"
         >
-          <div class="week-board">
-            <div v-for="day in daysOfWeek" :key="day.value" class="week-col">
+          <div class="flex flex-col gap-4 px-1 py-2 pb-3">
+            <section
+              v-for="month in calendarMonths.slice(0, visibleMonths)"
+              :key="month.id"
+              class="flex flex-col gap-1"
+            >
               <div
-                v-for="(date, idx) in result.data[day.value].slice(0, visibleRows)"
-                :key="`${day.value}-${idx}`"
-                class="day-chip"
-                :class="{
-                  'day-chip--end': date === result.lastDate,
-                  'day-chip--start': date === result.startDate,
-                }"
-                :title="date"
+                class="mx-1 mb-0.5 rounded-md bg-sky-50 px-2 py-1 text-xs font-semibold tracking-[-0.01em] text-sky-700"
               >
-                {{ shortDate(date) }}
+                {{ month.label }}
               </div>
-            </div>
+              <div
+                v-for="week in month.weeks"
+                :key="week.id"
+                class="grid w-full grid-cols-7 gap-1 px-0.5"
+              >
+                <template
+                  v-for="(cell, ci) in week.cells"
+                  :key="cell?.key ?? `${week.id}-${ci}`"
+                >
+                  <button
+                    v-if="cell && (cell.inResult || cell.excluded)"
+                    type="button"
+                    :class="[
+                      cellBase,
+                      'group cursor-pointer border transition duration-150 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100',
+                      cell.excluded
+                        ? 'border-red-500/55 bg-red-500/10 text-[#d70015] line-through hover:border-green-500/55 hover:bg-green-500/15 hover:text-[#248a3d] hover:no-underline'
+                        : cell.inResult && cell.key === result.startDate
+                          ? 'border-orange-500/45 bg-orange-500/15 font-semibold text-[#c93400] hover:border-red-500/35 hover:bg-red-500/10 hover:text-[#d70015]'
+                          : cell.inResult && cell.key === result.lastDate
+                            ? 'border-green-500/50 bg-green-500/15 font-semibold text-[#248a3d] hover:border-red-500/35 hover:bg-red-500/10 hover:text-[#d70015]'
+                            : 'border-black/10 bg-white/95 text-[#3a3a3c] hover:border-red-500/35 hover:bg-red-500/10 hover:text-[#d70015]',
+                    ]"
+                    :title="
+                      cell.excluded ? `Khôi phục ${cell.key}` : `Loại trừ ${cell.key}`
+                    "
+                    :aria-label="
+                      cell.excluded ? `Khôi phục ${cell.key}` : `Loại trừ ${cell.key}`
+                    "
+                    @click="onChipClick(cell)"
+                  >
+                    <span>{{ cell.label }}</span>
+                    <span
+                      v-if="cell.excluded"
+                      class="pointer-events-none absolute -top-1 -right-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-[#34c759] text-[0.6875rem] leading-none font-bold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100 motion-reduce:transition-none"
+                      aria-hidden="true"
+                      >+</span
+                    >
+                    <span
+                      v-else
+                      class="pointer-events-none absolute -top-1 -right-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3b30] text-[0.6875rem] leading-none font-bold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100 motion-reduce:transition-none"
+                      aria-hidden="true"
+                      >×</span
+                    >
+                  </button>
+                  <div
+                    v-else-if="cell"
+                    :class="[cellBase, 'pointer-events-none border border-transparent text-black/30']"
+                    aria-hidden="true"
+                  >
+                    {{ cell.label }}
+                  </div>
+                  <div
+                    v-else
+                    :class="[cellBase, 'pointer-events-none border border-transparent']"
+                    aria-hidden="true"
+                  />
+                </template>
+              </div>
+            </section>
           </div>
           <div
-            v-if="visibleRows < maxRow"
-            class="load-more tabular-nums"
+            v-if="visibleMonths < calendarMonths.length"
+            class="px-3 pt-2 pb-3 text-center text-xs text-[#8e8e93] tabular-nums"
             aria-live="polite"
           >
-            {{ isLoading ? "Đang tải…" : `Đã hiện ${visibleRows}/${maxRow} hàng` }}
+            {{
+              isLoading
+                ? "Đang tải…"
+                : `Đã hiện ${visibleMonths}/${calendarMonths.length} tháng`
+            }}
           </div>
         </div>
 
-        <!-- Fixed chrome: per-day counts + total -->
-        <div class="result-footer shrink-0">
-          <div class="week-counts">
+        <div
+          class="shrink-0 bg-white/70 shadow-[0_-8px_20px_rgba(0,0,0,0.04)] backdrop-blur-md backdrop-saturate-150"
+        >
+          <div class="grid w-full grid-cols-7 border-t border-black/10 bg-[#f2f2f7]/85">
             <div
               v-for="day in daysOfWeek"
               :key="day.value"
-              class="week-count tabular-nums"
+              class="border-r border-black/10 px-0.5 py-2 text-center text-[0.8125rem] font-semibold text-[#1c1c1e] tabular-nums last:border-r-0"
             >
               {{ result.data[day.value].length }}
             </div>
           </div>
-          <div class="total-bar flex items-center justify-between px-5 py-3.5">
+          <div class="flex items-center justify-between bg-[#007aff] px-5 py-3.5 text-white">
             <span class="text-[0.9375rem] font-medium text-white/90"
               >Tổng số ngày hợp lệ</span
             >
@@ -145,7 +324,7 @@ watch(
 
     <div
       v-else
-      class="empty-card flex min-h-[220px] flex-col items-center justify-center p-8 text-center"
+      class="flex min-h-[220px] flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-black/20 bg-white/45 p-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_8px_28px_rgba(0,0,0,0.06)] backdrop-blur-[20px] backdrop-saturate-150"
     >
       <div
         class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#007aff]/10 text-[#007aff]"
@@ -174,67 +353,9 @@ watch(
 </template>
 
 <style scoped>
-.result-card,
-.empty-card {
-  border-radius: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 8px 28px rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(20px) saturate(180%);
-}
-
-.empty-card {
-  border-style: dashed;
-  border-color: rgba(60, 60, 67, 0.18);
-  background: rgba(255, 255, 255, 0.45);
-}
-
-.result-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(60, 60, 67, 0.08);
-}
-
-@media (min-width: 640px) {
-  .result-title {
-    padding-inline: 1.25rem;
-  }
-}
-
-.week-heads,
-.week-counts,
-.week-board {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  width: 100%;
-}
-
-.week-heads {
-  background: rgba(242, 242, 247, 0.92);
-  backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(60, 60, 67, 0.08);
-}
-
-.week-head {
-  padding: 0.625rem 0.125rem;
-  text-align: center;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #8e8e93;
-}
-
+/* Scroll-edge fade — mask combos are awkward as pure utilities. */
 .week-scroll {
-  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  /* Apple scroll-edge fade instead of hard dividers */
   mask-image: linear-gradient(#000, #000);
 }
 
@@ -256,113 +377,11 @@ watch(
   );
 }
 
-.week-board {
-  align-items: start;
-}
-
-.week-col {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.5rem 0.25rem 0.75rem;
-  border-right: 1px solid rgba(60, 60, 67, 0.08);
-}
-
-.week-col:last-child {
-  border-right: none;
-}
-
-.load-more {
-  padding: 0.5rem 0.75rem 0.75rem;
-  text-align: center;
-  font-size: 0.75rem;
-  color: #8e8e93;
-}
-
-.result-footer {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(16px) saturate(180%);
-  box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.04);
-}
-
-.week-counts {
-  border-top: 1px solid rgba(60, 60, 67, 0.08);
-  background: rgba(242, 242, 247, 0.85);
-}
-
-.week-count {
-  padding: 0.5rem 0.125rem;
-  text-align: center;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #1c1c1e;
-  border-right: 1px solid rgba(60, 60, 67, 0.08);
-}
-
-.week-count:last-child {
-  border-right: none;
-}
-
-.day-chip {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(60, 60, 67, 0.1);
-  background: rgba(255, 255, 255, 0.95);
-  padding: 0.35rem 0.1rem;
-  font-size: clamp(0.625rem, 2.4vw, 0.8125rem);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  color: #3a3a3c;
-  white-space: nowrap;
-}
-
-.day-chip--start {
-  border-color: rgba(255, 149, 0, 0.35);
-  background: rgba(255, 149, 0, 0.12);
-  color: #c93400;
-}
-
-.day-chip--end {
-  border-color: rgba(52, 199, 89, 0.4);
-  background: rgba(52, 199, 89, 0.12);
-  color: #248a3d;
-}
-
-.total-bar {
-  background: #007aff;
-  color: white;
-}
-
 @media (prefers-reduced-transparency: reduce) {
-  .result-card,
-  .empty-card,
-  .result-title,
-  .result-footer {
-    background: #fff;
-    backdrop-filter: none;
-  }
-
-  .week-heads,
-  .week-counts {
-    background: #f2f2f7;
-    backdrop-filter: none;
-  }
-
   .week-scroll.edge-top,
   .week-scroll.edge-bottom,
   .week-scroll.edge-top.edge-bottom {
     mask-image: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .week-scroll {
-    scroll-behavior: auto;
   }
 }
 </style>

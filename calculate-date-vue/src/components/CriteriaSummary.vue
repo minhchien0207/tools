@@ -10,6 +10,7 @@ const props = defineProps<{
   totalDays: number | null;
   methodType: string;
   excludedDays: number[];
+  excludedDates: string[];
 }>();
 
 defineEmits<{
@@ -37,11 +38,21 @@ const methodLabel = computed(() => {
 });
 
 const excludedLabel = computed(() => {
-  if (!props.excludedDays.length) return "Không loại trừ";
+  if (!props.excludedDays.length) return null;
   const labels = daysOfWeek
     .filter((d) => props.excludedDays.includes(d.value))
     .map((d) => (d.label === "Chủ nhật" ? "CN" : d.label.replace("Thứ ", "T")));
-  return `Loại trừ: ${labels.join(", ")}`;
+  return `Thứ: ${labels.join(", ")}`;
+});
+
+const excludedDatesLabel = computed(() => {
+  if (!props.excludedDates.length) return null;
+  const list = props.excludedDates.slice(0, 3).join(", ");
+  const more =
+    props.excludedDates.length > 3
+      ? ` +${props.excludedDates.length - 3}`
+      : "";
+  return `Ngày: ${list}${more}`;
 });
 </script>
 
@@ -53,7 +64,13 @@ const excludedLabel = computed(() => {
       <div class="summary-range tabular-nums">{{ rangeLabel }}</div>
       <div class="summary-chips">
         <span v-if="methodLabel" class="chip">{{ methodLabel }}</span>
-        <span class="chip">{{ excludedLabel }}</span>
+        <span v-if="excludedLabel" class="chip">{{ excludedLabel }}</span>
+        <span v-if="excludedDatesLabel" class="chip">{{ excludedDatesLabel }}</span>
+        <span
+          v-if="!excludedLabel && !excludedDatesLabel"
+          class="chip chip--muted"
+          >Không loại trừ</span
+        >
       </div>
     </div>
     <button type="button" class="edit-btn" @click="$emit('edit')">
@@ -123,6 +140,11 @@ const excludedLabel = computed(() => {
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: -0.01em;
+}
+
+.chip--muted {
+  background: rgba(60, 60, 67, 0.08);
+  color: #86868b;
 }
 
 .edit-btn {

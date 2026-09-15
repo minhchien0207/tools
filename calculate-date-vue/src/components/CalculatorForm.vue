@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { nextTick, ref } from "vue";
+import { format } from "date-fns";
 import DatePicker from "primevue/datepicker";
 import { daysOfWeek } from "@/composables/useDateCalculator";
 
@@ -9,6 +11,7 @@ const props = defineProps<{
   totalDays: number | null;
   methodType: string;
   excludedDays: number[];
+  excludedDates: string[];
 }>();
 
 const emit = defineEmits<{
@@ -18,6 +21,7 @@ const emit = defineEmits<{
   "update:totalDays": [value: number | null];
   "update:methodType": [value: string];
   "update:excludedDays": [value: number[]];
+  "update:excludedDates": [value: string[]];
   calculate: [];
 }>();
 
@@ -29,6 +33,74 @@ const toggleExcluded = (value: number) => {
     ? props.excludedDays.filter((d) => d !== value)
     : [...props.excludedDays, value];
   emit("update:excludedDays", next);
+};
+
+const pickDate = ref<Date | null>(null);
+const excludePickerKey = ref(0);
+const excludePickerRef = ref<{
+  currentMonth: number;
+  currentYear: number;
+} | null>(null);
+
+/** Last month the user opened/navigated/selected in the exclude picker. */
+const lastExcludeView = ref<{ month: number; year: number } | null>(null);
+
+const rememberExcludeView = (month: number, year: number) => {
+  lastExcludeView.value = { month, year };
+};
+
+const applyExcludePickerMonth = () => {
+  const picker = excludePickerRef.value;
+  if (!picker) return;
+
+  // Prefer last user choice; first open falls back to startDate month.
+  const view = lastExcludeView.value;
+  if (view) {
+    picker.currentMonth = view.month;
+    picker.currentYear = view.year;
+    return;
+  }
+
+  const anchor = props.startDate;
+  if (anchor) {
+    picker.currentMonth = anchor.getMonth();
+    picker.currentYear = anchor.getFullYear();
+  }
+};
+
+const addExcludedDate = (value: Date | Date[] | null) => {
+  const date = Array.isArray(value) ? value[0] : value;
+  // Ignore null emits from remount/clear.
+  if (!date) return;
+
+  rememberExcludeView(date.getMonth(), date.getFullYear());
+  const key = format(date, "dd/MM/yyyy");
+  if (!props.excludedDates.includes(key)) {
+    emit("update:excludedDates", [...props.excludedDates, key]);
+  }
+
+  // Remount picker so PrimeVue cannot leave the selected date in the input.
+  pickDate.value = null;
+  excludePickerKey.value += 1;
+};
+
+const syncExcludePickerMonth = async () => {
+  // PrimeVue may reset month from viewDate during open — re-apply after that.
+  await nextTick();
+  applyExcludePickerMonth();
+  setTimeout(applyExcludePickerMonth, 0);
+};
+
+/** PrimeVue month-change uses 1-based month. */
+const onExcludeMonthChange = (event: { month: number; year: number }) => {
+  rememberExcludeView(event.month - 1, event.year);
+};
+
+const removeExcludedDate = (key: string) => {
+  emit(
+    "update:excludedDates",
+    props.excludedDates.filter((d) => d !== key),
+  );
 };
 </script>
 
@@ -136,7 +208,7 @@ const toggleExcluded = (value: number) => {
         </div>
       </div>
 
-      <!-- Loại trừ: 1 hàng pill -->
+      <!-- Loại trừ thứ: 1 hàng pill -->
       <div class="field field--exclude">
         <div class="field-label">Loại trừ thứ</div>
         <div class="day-pills" role="group" aria-label="Loại trừ thứ trong tuần">
@@ -151,6 +223,38 @@ const toggleExcluded = (value: number) => {
           >
             {{ shortDay(day.label) }}
           </button>
+        </div>
+      </div>
+
+      <!-- Loại trừ ngày cụ thể -->
+      <div class="field">
+        <div class="field-label">Loại trừ ngày cụ thể</div>
+        <div class="exclude-dates">
+          <DatePicker
+            :key="excludePickerKey"
+            ref="excludePickerRef"
+            :modelValue="pickDate"
+            dateFormat="dd/mm/yy"
+            showIcon
+            placeholder="Thêm ngày"
+            fluid
+            @update:modelValue="addExcludedDate"
+            @show="syncExcludePickerMonth"
+            @month-change="onExcludeMonthChange"
+          />
+          <div v-if="excludedDates.length" class="date-chips">
+            <button
+              v-for="key in excludedDates"
+              :key="key"
+              type="button"
+              class="date-chip"
+              :title="`Bỏ loại trừ ${key}`"
+              @click="removeExcludedDate(key)"
+            >
+              <span class="tabular-nums">{{ key }}</span>
+              <span class="date-chip-x" aria-hidden="true">×</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -332,6 +436,46 @@ const toggleExcluded = (value: number) => {
   color: #0071e3;
 }
 
+.exclude-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.date-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid rgba(0, 113, 227, 0.28);
+  border-radius: 999px;
+  background: rgba(0, 113, 227, 0.08);
+  padding: 0.3rem 0.55rem 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #0071e3;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    transform 100ms ease-out;
+}
+
+.date-chip:active {
+  transform: scale(0.97);
+}
+
+.date-chip-x {
+  font-size: 0.95rem;
+  line-height: 1;
+  opacity: 0.7;
+}
+
 .form-actions {
   border-top: 1px solid rgba(0, 0, 0, 0.05);
   background: rgba(245, 245, 247, 0.65);
@@ -384,12 +528,14 @@ const toggleExcluded = (value: number) => {
 @media (prefers-reduced-motion: reduce) {
   .segment-item,
   .day-pill,
+  .date-chip,
   .primary-btn {
     transition: none;
   }
 
   .segment-item:active,
   .day-pill:active,
+  .date-chip:active,
   .primary-btn:active {
     transform: none;
   }

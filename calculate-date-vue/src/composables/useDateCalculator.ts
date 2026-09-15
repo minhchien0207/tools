@@ -30,6 +30,8 @@ export function useDateCalculator() {
   const totalDays = ref<number | null>(null);
   const methodType = useStorage<string>("methodType", "1"); // 1: Đủ số lượng ngày đã chọn, 2: Đúng thời gian
   const excludedDays = useStorage<number[]>("excludedDays", []); // 1 to 7
+  /** Specific calendar dates as `dd/MM/yyyy` (same format as result chips). */
+  const excludedDates = useStorage<string[]>("excludedDates", []);
 
   const result = ref<ResultData | null>(null);
   const maxRow = ref<number>(0);
@@ -60,6 +62,14 @@ export function useDateCalculator() {
       return day === 0 ? 7 : day;
     };
 
+    const isExcluded = (date: Date) => {
+      const key = format(date, "dd/MM/yyyy");
+      return (
+        excludedDays.value.includes(getIsoWeekday(date)) ||
+        excludedDates.value.includes(key)
+      );
+    };
+
     if (calcType.value === "1") {
       if (!endDate.value) {
         alert("Vui lòng nhập ngày kết thúc!!!");
@@ -76,7 +86,7 @@ export function useDateCalculator() {
       while (!isBefore(eDate, currentDate)) {
         const isoWeekday = getIsoWeekday(currentDate);
 
-        if (!excludedDays.value.includes(isoWeekday)) {
+        if (!isExcluded(currentDate)) {
           arrResult[isoWeekday].push(format(currentDate, "dd/MM/yyyy"));
           countDate++;
         }
@@ -96,12 +106,15 @@ export function useDateCalculator() {
 
       let tempTotal = 0;
       let currentDate = sDate;
+      // ponytail: hard cap so pathological exclude lists can't spin forever
+      let guard = 0;
+      const guardMax = Math.max((totalDays.value ?? 0) * 14, 3660);
 
-      while (tempTotal < (totalDays.value ?? 0)) {
+      while (tempTotal < (totalDays.value ?? 0) && guard < guardMax) {
+        guard++;
         const isoWeekday = getIsoWeekday(currentDate);
-        const isExcluded = excludedDays.value.includes(isoWeekday);
 
-        if (!isExcluded) {
+        if (!isExcluded(currentDate)) {
           arrResult[isoWeekday].push(format(currentDate, "dd/MM/yyyy"));
           countDate++;
           if (methodType.value === "1") {
@@ -142,6 +155,7 @@ export function useDateCalculator() {
     totalDays,
     methodType,
     excludedDays,
+    excludedDates,
     result,
     maxRow,
     totalCount,
