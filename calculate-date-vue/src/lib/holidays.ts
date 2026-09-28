@@ -1,19 +1,141 @@
 // calculate-date-vue/src/lib/holidays.ts
 import { format, getYear, isWithinInterval, startOfDay } from "date-fns";
-import dataset from "@/data/holidays-vn.json";
+import vnDataset from "@/data/holidays-vn.json";
+import jpDataset from "@/data/holidays-jp.json";
+import usDataset from "@/data/holidays-us.json";
+import cnDataset from "@/data/holidays-cn.json";
 
-export type HolidayRecord = { date: string; name: string };
+export type CountryCode = "vn" | "jp" | "us" | "cn";
+
+export type HolidayRecord = {
+  date: string;
+  name: string;
+  country: CountryCode;
+};
+
 export type HolidayDataset = {
   updatedAt: string;
   source: string;
-  holidays: HolidayRecord[];
+  holidays: { date: string; name: string }[];
 };
 
 export type HolidayWindow =
   | { kind: "range"; start: Date; end: Date | null }
   | { kind: "year"; year: number };
 
-export const vnHolidaysDataset = dataset as HolidayDataset;
+export type HolidayChip = {
+  key: string;
+  date: string;
+  label: string;
+  names: string[];
+  countries: CountryCode[];
+};
+
+export const HOLIDAY_COUNTRIES: {
+  code: CountryCode;
+  label: string;
+  short: string;
+}[] = [
+  { code: "vn", label: "Việt Nam", short: "VN" },
+  { code: "jp", label: "Nhật Bản", short: "JP" },
+  { code: "us", label: "Hoa Kỳ", short: "US" },
+  { code: "cn", label: "Trung Quốc", short: "CN" },
+];
+
+const COUNTRY_ORDER: Record<CountryCode, number> = {
+  vn: 0,
+  jp: 1,
+  us: 2,
+  cn: 3,
+};
+
+export const holidayDatasets: Record<CountryCode, HolidayDataset> = {
+  vn: vnDataset as HolidayDataset,
+  jp: jpDataset as HolidayDataset,
+  us: usDataset as HolidayDataset,
+  cn: cnDataset as HolidayDataset,
+};
+
+/** @deprecated Prefer holidayDatasets / getHolidaysForCountries */
+export const vnHolidaysDataset = holidayDatasets.vn;
+
+export function tagHolidays(
+  dataset: HolidayDataset,
+  code: CountryCode,
+): HolidayRecord[] {
+  return dataset.holidays.map((h) => ({
+    date: h.date,
+    name: h.name,
+    country: code,
+  }));
+}
+
+export function getHolidaysForCountries(
+  codes: CountryCode[],
+): HolidayRecord[] {
+  const wanted = new Set(codes);
+  const out: HolidayRecord[] = [];
+  for (const { code } of HOLIDAY_COUNTRIES) {
+    if (!wanted.has(code)) continue;
+    out.push(...tagHolidays(holidayDatasets[code], code));
+  }
+  return out;
+}
+
+export function mergeHolidayChips(
+  records: HolidayRecord[],
+): HolidayChip[] {
+  const byDate = new Map<string, HolidayRecord[]>();
+  for (const r of records) {
+    const list = byDate.get(r.date);
+    if (list) list.push(r);
+    else byDate.set(r.date, [r]);
+  }
+
+  const dates = [...byDate.keys()].sort();
+  return dates.map((date) => {
+    const group = byDate.get(date)!;
+    group.sort(
+      (a, b) => COUNTRY_ORDER[a.country] - COUNTRY_ORDER[b.country],
+    );
+
+    const countries: CountryCode[] = [];
+    const names: string[] = [];
+    const seenCountry = new Set<CountryCode>();
+    const seenName = new Set<string>();
+
+    for (const r of group) {
+      if (!seenCountry.has(r.country)) {
+        seenCountry.add(r.country);
+        countries.push(r.country);
+      }
+      if (!seenName.has(r.name)) {
+        seenName.add(r.name);
+        names.push(r.name);
+      }
+    }
+
+    const key = toExcludedKey(date);
+    const shorts = countries.map(
+      (c) => HOLIDAY_COUNTRIES.find((x) => x.code === c)!.short,
+    );
+    const label = `${key} · ${names.join(" / ")} · ${shorts.join(", ")}`;
+    return { key, date, label, names, countries };
+  });
+}
+
+export function holidayInfoByKey(
+  records?: HolidayRecord[],
+): Map<string, { label: string }> {
+  const source =
+    records ??
+    getHolidaysForCountries(HOLIDAY_COUNTRIES.map((c) => c.code));
+  const map = new Map<string, { label: string }>();
+  for (const chip of mergeHolidayChips(source)) {
+    map.set(chip.key, { label: chip.label });
+  }
+  return map;
+}
 
 export function toExcludedKey(isoDate: string): string {
   const [y, m, d] = isoDate.split("-").map(Number);
@@ -42,10 +164,10 @@ export function resolveHolidayWindow(
   };
 }
 
-export function filterHolidaysForWindow(
-  holidays: HolidayRecord[],
+export function filterHolidaysForWindow<T extends { date: string }>(
+  holidays: T[],
   window: HolidayWindow,
-): HolidayRecord[] {
+): T[] {
   return holidays.filter((h) => {
     const d = parseIsoToDate(h.date);
     if (window.kind === "year") return getYear(d) === window.year;
@@ -56,7 +178,7 @@ export function filterHolidaysForWindow(
   });
 }
 
-export function holidayKeys(holidays: HolidayRecord[]): string[] {
+export function holidayKeys(holidays: { date: string }[]): string[] {
   return holidays.map((h) => toExcludedKey(h.date));
 }
 
