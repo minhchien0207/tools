@@ -16,6 +16,7 @@ Phase 1 chỉ loại trừ ngày lễ Việt Nam từ một snapshot ICS. Ngư�
 - Cho phép **chọn nhiều quốc gia cùng lúc**; hợp nhất ngày lễ trong cửa sổ tính.
 - Chip ngày lễ **gộp theo ngày** (một chip / một `yyyy-MM-dd`).
 - Nâng cấp khối UI loại trừ lễ trong `CalculatorForm.vue` (vùng master + list chip) theo hướng Apple: phản hồi tức thì, agency, simplicity, reduced-motion.
+- Trên lịch kết quả (`ResultDisplay.vue`), khi ô ngày trùng ngày lễ trong các snapshot đã bundle thì hiện tên lễ (tooltip / tương đương) — kể cả ô ngoài tập `inResult` nếu vẫn render số ngày trong tháng.
 - Giữ `excludedDates` làm nguồn sự thật cho `calculate()` — không đổi công thức lõi.
 
 ## Non-goals
@@ -61,6 +62,7 @@ useDateCalculator.ts               # unchanged: reads excludedDates
         │
         ▼
 CriteriaSummary.vue / App.vue      # badge “Lễ · N” (count of excluded holiday dates in window)
+ResultDisplay.vue                  # holiday lookup on calendar cells → tooltip / aria
 ```
 
 ### Country registry (phase 2)
@@ -173,6 +175,24 @@ Master **on** with countries:
 
 Rehydrate on remount (edit flow): if `excludedDates` intersects holiday keys for any registry country in the current window, set `excludeHolidays` true, derive `selectedCountries` as countries that have at least one intersecting holiday date in-window, and restore chip selection. Prefer minimal surprise: only auto-enable countries that actually contribute intersecting keys.
 
+## Result calendar holiday hints (`ResultDisplay.vue`)
+
+**Intent:** Sau khi tính, người dùng nhìn lịch kết quả và nhận ra ngày nào là ngày lễ (từ mọi snapshot phase 2 đã bundle), không cần đoán.
+
+**Lookup scope:** Union of all four country datasets (`vn|jp|us|cn`), independent of which countries were selected in the form. A date is a “holiday cell” if any bundled list has that ISO date. Use the same merge-by-date labeling as form chips (`names` + country codes).
+
+**Presentation (Apple: understanding + craft, touch-aware):**
+
+1. **Always-visible hint (touch / glance):** holiday cells that render a day number get a small accent mark (e.g. tiny top-center dot in system blue `#0071e3`, or slightly stronger weight) so the fact is discoverable without hover.
+2. **Detail on hover / focus:** extend the existing native `title` and `aria-label` (already used for exclude/restore) to include the holiday line, e.g.  
+   `Loại trừ 01/01/2026 — New Year's Day / Tết dương lịch · VN, US`  
+   or when not interactive (filler in-month day): `01/01/2026 — …`.  
+   Prefer enriching native `title`/`aria-label` over a custom floating tooltip library (YAGNI; works with keyboard focus via `aria-label`).
+3. **Do not** change click behavior: holiday hint is informational; exclude/restore remains the click action for `inResult` / `excluded` cells.
+4. **Non-holiday cells:** unchanged.
+
+**Data wiring:** Add `holidayInfoByKey(keys | range) → Map<dd/MM/yyyy, { label: string }>` (or reuse `mergeHolidayChips` then index by `key`) in `holidays.ts`. `ResultDisplay` builds a computed map for dates in the visible calendar months (or for `dateSet ∪` month days) — avoid per-cell full-dataset scans in the template.
+
 ## Error handling
 
 | Case | Behavior |
@@ -189,7 +209,8 @@ Rehydrate on remount (edit flow): if `excludedDates` intersects holiday keys for
 - **Window + multi-country filter:** selecting `vn`+`us` only returns those datasets’ dates in range.
 - **Selection sync:** master off removes holiday keys; master on restores from selected chips; country deselect drops that country’s dates from the chip set and from selection sync.
 - **Rehydrate:** excluded holiday dates restore master + countries + chips without forcing unchecked holidays back on.
-- **Manual / browser:** enable master → select VN+US → verify chips merge on shared dates → toggle chips → calculate → summary shows `Lễ · N`; resize mobile + desktop; reduced-motion path.
+- **ResultDisplay hints:** holiday date in calendar exposes merged label via `title`/`aria-label` and shows the accent mark; non-holiday cell has neither; exclude/restore click still works.
+- **Manual / browser:** enable master → select VN+US → verify chips merge on shared dates → toggle chips → calculate → summary shows `Lễ · N`; hover/focus a holiday cell on the result calendar and confirm label; resize mobile + desktop; reduced-motion path.
 
 ## Files likely touched
 
@@ -203,6 +224,7 @@ Rehydrate on remount (edit flow): if `excludedDates` intersects holiday keys for
 - `src/lib/holidays.ts` / `holidays.test.ts`
 - `src/components/CalculatorForm.vue`
 - `src/components/CriteriaSummary.vue`
+- `src/components/ResultDisplay.vue`
 - `src/App.vue`
 
 ## Success criteria
@@ -212,4 +234,5 @@ Rehydrate on remount (edit flow): if `excludedDates` intersects holiday keys for
 3. Shared calendar dates appear as a single chip with merged labeling.
 4. Default open form does not exclude holidays and has no countries selected.
 5. Summary badge reads `Lễ · N` with correct distinct-date count.
-6. UI matches existing form language and meets the Apple-design constraints above; verified in browser on desktop and mobile widths.
+6. Result calendar holiday cells show an always-visible accent and expose the merged holiday name in `title`/`aria-label` without breaking exclude/restore.
+7. UI matches existing form language and meets the Apple-design constraints above; verified in browser on desktop and mobile widths.
