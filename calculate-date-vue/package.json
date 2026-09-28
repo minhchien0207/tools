@@ -10,7 +10,11 @@
     "type-check": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "holidays:vn": "node scripts/fetch-vn-holidays.mjs"
+    "holidays:vn": "node scripts/fetch-holidays.mjs vn",
+    "holidays:jp": "node scripts/fetch-holidays.mjs jp",
+    "holidays:us": "node scripts/fetch-holidays.mjs us",
+    "holidays:cn": "node scripts/fetch-holidays.mjs cn",
+    "holidays:all": "node scripts/fetch-holidays.mjs all"
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.3",
