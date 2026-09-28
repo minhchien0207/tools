@@ -10,6 +10,7 @@ import {
   toExcludedKey,
   mergeHolidaySelection,
   removeKeys,
+  rehydrateHolidaySelection,
 } from "@/lib/holidays";
 
 const props = defineProps<{
@@ -57,6 +58,20 @@ const holidayChips = computed(() =>
 );
 
 const canUseHolidays = computed(() => !!props.startDate);
+
+function applyRehydratedHolidayState() {
+  const keysInWindow = holidayChips.value.map((c) => c.key);
+  const { selectedKeys, masterOn } = rehydrateHolidaySelection(
+    props.excludedDates,
+    keysInWindow,
+  );
+  selectedHolidayKeys.value = selectedKeys;
+  excludeVnHolidays.value = masterOn;
+  // Keep prev in sync with selected so later applyHolidaySync won't strip wrongly.
+  prevHolidayKeysInWindow.value = masterOn ? [...selectedKeys] : [];
+}
+
+applyRehydratedHolidayState();
 
 function applyHolidaySync(nextSelected: string[], keysInWindow: string[]) {
   // Drop any holiday keys that were in the previous window selection handling,
@@ -185,6 +200,11 @@ const onExcludeMonthChange = (event: { month: number; year: number }) => {
 };
 
 const removeExcludedDate = (key: string) => {
+  // Route holiday removals through chip sync so selection/prev stay aligned.
+  if (excludeVnHolidays.value && selectedHolidayKeys.value.includes(key)) {
+    toggleHolidayChip(key);
+    return;
+  }
   emit(
     "update:excludedDates",
     props.excludedDates.filter((d) => d !== key),

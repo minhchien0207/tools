@@ -1,5 +1,5 @@
 // calculate-date-vue/src/lib/holidays.test.ts
-import { describe, expect, test } from "vitest";
+import { expect, test } from "vitest";
 import {
   toExcludedKey,
   resolveHolidayWindow,
@@ -8,6 +8,7 @@ import {
   mergeHolidaySelection,
   removeKeys,
   countExcludedHolidays,
+  rehydrateHolidaySelection,
 } from "./holidays";
 import type { HolidayRecord } from "./holidays";
 
@@ -89,4 +90,23 @@ test("countExcludedHolidays intersects", () => {
       ["01/01/2026", "01/05/2026"],
     ),
   ).toBe(1);
+});
+
+test("rehydrateHolidaySelection intersects without forcing missing holidays", () => {
+  const keysInWindow = ["01/01/2026", "30/04/2026", "01/05/2026"];
+  expect(
+    rehydrateHolidaySelection(
+      ["02/01/2026", "01/01/2026", "01/05/2026"],
+      keysInWindow,
+    ),
+  ).toEqual({
+    selectedKeys: ["01/01/2026", "01/05/2026"],
+    masterOn: true,
+  });
+});
+
+test("rehydrateHolidaySelection master off when no holiday keys excluded", () => {
+  expect(
+    rehydrateHolidaySelection(["02/01/2026"], ["01/01/2026", "01/05/2026"]),
+  ).toEqual({ selectedKeys: [], masterOn: false });
 });

@@ -1,5 +1,5 @@
 // calculate-date-vue/scripts/fetch-vn-holidays.mjs
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseVnHolidays } from "./lib/parseVnIcs.mjs";

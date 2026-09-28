@@ -86,3 +86,16 @@ export function countExcludedHolidays(
   for (const k of holidayKeyList) if (set.has(k)) n++;
   return n;
 }
+
+/** Restore chip/master state from excludedDates without forcing missing holidays on. */
+export function rehydrateHolidaySelection(
+  excludedDates: string[],
+  keysInWindow: string[],
+): { selectedKeys: string[]; masterOn: boolean } {
+  const excluded = new Set(excludedDates);
+  const selectedKeys = keysInWindow.filter((k) => excluded.has(k));
+  return {
+    selectedKeys,
+    masterOn: selectedKeys.length > 0,
+  };
+}
