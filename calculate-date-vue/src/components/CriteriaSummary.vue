@@ -11,7 +11,7 @@ const props = defineProps<{
   methodType: string;
   excludedDays: number[];
   excludedDates: string[];
-  vnHolidayExcludedCount: number;
+  holidayExcludedCount: number;
 }>();
 
 defineEmits<{
@@ -94,12 +94,12 @@ const excludedDatesLabel = computed(() => {
           >{{ excludedDatesLabel }}</span
         >
         <span
-          v-if="vnHolidayExcludedCount > 0"
+          v-if="holidayExcludedCount > 0"
           class="inline-flex items-center rounded-full bg-[#0071e3]/10 px-2.5 py-0.5 text-xs font-medium tracking-[-0.01em] text-[#0071e3]"
-          >Lễ VN · {{ vnHolidayExcludedCount }}</span
+          >Lễ · {{ holidayExcludedCount }}</span
         >
         <span
-          v-if="!excludedLabel && !excludedDatesLabel && vnHolidayExcludedCount === 0"
+          v-if="!excludedLabel && !excludedDatesLabel && holidayExcludedCount === 0"
           class="inline-flex items-center rounded-full bg-black/8 px-2.5 py-0.5 text-xs font-medium tracking-[-0.01em] text-[#86868b]"
           >Không loại trừ</span
         >

@@ -5,7 +5,7 @@ import CalculatorForm from "@/components/CalculatorForm.vue";
 import CriteriaSummary from "@/components/CriteriaSummary.vue";
 import ResultDisplay from "@/components/ResultDisplay.vue";
 import {
-  vnHolidaysDataset,
+  getHolidaysForCountries,
   resolveHolidayWindow,
   filterHolidaysForWindow,
   holidayKeys,
@@ -26,16 +26,23 @@ const {
   calculate,
 } = useDateCalculator();
 
-const vnHolidayExcludedCount = computed(() => {
+const holidayExcludedCount = computed(() => {
   const w = resolveHolidayWindow(
     calcType.value,
     startDate.value,
     endDate.value,
   );
   if (!w) return 0;
-  const keys = holidayKeys(
-    filterHolidaysForWindow(vnHolidaysDataset.holidays, w),
-  );
+  const keys = [
+    ...new Set(
+      holidayKeys(
+        filterHolidaysForWindow(
+          getHolidaysForCountries(["vn", "jp", "us", "cn"]),
+          w,
+        ),
+      ),
+    ),
+  ];
   return countExcludedHolidays(excludedDates.value, keys);
 });
 
@@ -106,7 +113,7 @@ const onRestoreDate = (date: string) => {
           :methodType="methodType"
           :excludedDays="excludedDays"
           :excludedDates="excludedDates"
-          :vnHolidayExcludedCount="vnHolidayExcludedCount"
+          :holidayExcludedCount="holidayExcludedCount"
           @edit="editing = true"
         />
         <ResultDisplay
