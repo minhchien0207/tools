@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "holidays:vn": "node scripts/fetch-vn-holidays.mjs"
   },
   "dependencies": {
     "@primeuix/themes": "^2.0.3",
@@ -25,6 +28,7 @@
     "prettier-plugin-tailwindcss": "^0.8.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.10",
+    "vitest": "^5.0.2",
     "vue-tsc": "^3.2.7"
   }
 }
