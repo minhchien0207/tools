@@ -6,6 +6,7 @@ import { daysOfWeek } from "@/composables/useDateCalculator";
 import {
   HOLIDAY_COUNTRIES,
   type CountryCode,
+  colorForCountry,
   getHolidaysForCountries,
   mergeHolidayChips,
   resolveHolidayWindow,
@@ -466,7 +467,7 @@ const segmentOn = "bg-white font-semibold shadow-sm";
               v-for="country in HOLIDAY_COUNTRIES"
               :key="country.code"
               type="button"
-              class="min-w-10 cursor-pointer rounded-full border px-[0.65rem] py-[0.4rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+              class="inline-flex min-w-10 cursor-pointer items-center gap-1.5 rounded-full border px-[0.65rem] py-[0.4rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
               :class="
                 selectedCountries.includes(country.code)
                   ? 'border-[#0071e3]/35 bg-[#0071e3]/10 text-[#0071e3]'
@@ -477,6 +478,11 @@ const segmentOn = "bg-white font-semibold shadow-sm";
               :title="country.label"
               @click="toggleCountry(country.code)"
             >
+              <span
+                class="h-2 w-2 shrink-0 rounded-full"
+                :style="{ backgroundColor: colorForCountry(country.code) }"
+                aria-hidden="true"
+              />
               {{ country.short }}
             </button>
           </div>
@@ -502,7 +508,7 @@ const segmentOn = "bg-white font-semibold shadow-sm";
                   v-for="chip in holidayChips"
                   :key="chip.key"
                   type="button"
-                  class="inline-flex cursor-pointer items-center rounded-full border py-[0.3rem] px-[0.65rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+                  class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border py-[0.3rem] px-[0.65rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
                   :class="
                     selectedHolidayKeys.includes(chip.key)
                       ? 'border-[#0071e3]/30 bg-[#0071e3]/10 text-[#0071e3]'
@@ -512,6 +518,17 @@ const segmentOn = "bg-white font-semibold shadow-sm";
                   :title="chip.label"
                   @click="toggleHolidayChip(chip.key)"
                 >
+                  <span
+                    class="inline-flex shrink-0 items-center gap-0.5"
+                    aria-hidden="true"
+                  >
+                    <span
+                      v-for="code in chip.countries"
+                      :key="code"
+                      class="h-1.5 w-1.5 rounded-full"
+                      :style="{ backgroundColor: colorForCountry(code) }"
+                    />
+                  </span>
                   <span class="tabular-nums">{{ chip.label }}</span>
                 </button>
               </div>

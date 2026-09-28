@@ -42,12 +42,47 @@ export const HOLIDAY_COUNTRIES: {
   { code: "cn", label: "Trung Quốc", short: "CN" },
 ];
 
+/**
+ * Fixed high-contrast dots for calendar cells. New countries take the next
+ * index in `HOLIDAY_COUNTRIES` (`i % length`). Hues are interleaved so
+ * neighboring registry entries stay easy to tell apart.
+ */
+export const COUNTRY_DOT_PALETTE = [
+  "#E53935", // red — vn
+  "#F9A825", // amber — jp
+  "#1E88E5", // blue — us
+  "#43A047", // green — cn
+  "#8E24AA", // purple
+  "#00897B", // teal
+  "#D81B60", // magenta
+  "#3949AB", // indigo
+  "#EF6C00", // deep orange
+  "#6D4C41", // brown
+  "#00ACC1", // cyan
+  "#7B1FA2", // deep purple
+  "#C62828", // dark red
+  "#2E7D32", // dark green
+  "#5C6BC0", // soft indigo
+  "#00838F", // dark cyan
+  "#AD1457", // dark pink
+  "#546E7A", // blue grey
+  "#6A1B9A", // violet
+  "#FF7043", // coral
+] as const;
+
 const COUNTRY_ORDER: Record<CountryCode, number> = {
   vn: 0,
   jp: 1,
   us: 2,
   cn: 3,
 };
+
+/** Dot color for a registry country (`HOLIDAY_COUNTRIES` index % palette). */
+export function colorForCountry(code: CountryCode): string {
+  const i = HOLIDAY_COUNTRIES.findIndex((c) => c.code === code);
+  const idx = i >= 0 ? i : 0;
+  return COUNTRY_DOT_PALETTE[idx % COUNTRY_DOT_PALETTE.length]!;
+}
 
 export const holidayDatasets: Record<CountryCode, HolidayDataset> = {
   vn: vnDataset as HolidayDataset,
@@ -124,15 +159,26 @@ export function mergeHolidayChips(
   });
 }
 
+export type HolidayKeyInfo = {
+  label: string;
+  countries: CountryCode[];
+  /** Per-country colors in registry order (for multi-dot calendar marks). */
+  colors: string[];
+};
+
 export function holidayInfoByKey(
   records?: HolidayRecord[],
-): Map<string, { label: string }> {
+): Map<string, HolidayKeyInfo> {
   const source =
     records ??
     getHolidaysForCountries(HOLIDAY_COUNTRIES.map((c) => c.code));
-  const map = new Map<string, { label: string }>();
+  const map = new Map<string, HolidayKeyInfo>();
   for (const chip of mergeHolidayChips(source)) {
-    map.set(chip.key, { label: chip.label });
+    map.set(chip.key, {
+      label: chip.label,
+      countries: chip.countries,
+      colors: chip.countries.map(colorForCountry),
+    });
   }
   return map;
 }

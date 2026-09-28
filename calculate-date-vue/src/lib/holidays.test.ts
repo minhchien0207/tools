@@ -10,9 +10,11 @@ import {
   countExcludedHolidays,
   rehydrateHolidaySelection,
   HOLIDAY_COUNTRIES,
+  COUNTRY_DOT_PALETTE,
   getHolidaysForCountries,
   mergeHolidayChips,
   holidayInfoByKey,
+  colorForCountry,
 } from "./holidays";
 import type { HolidayRecord } from "./holidays";
 
@@ -178,6 +180,28 @@ test("holidayInfoByKey maps 01/01/2026 to label with holiday name", () => {
     { date: "2026-01-01", name: "Tết dương lịch", country: "vn" },
   ]);
   expect(map.get("01/01/2026")?.label).toContain("Tết dương lịch");
+});
+
+test("colorForCountry uses palette by HOLIDAY_COUNTRIES index", () => {
+  expect(COUNTRY_DOT_PALETTE).toHaveLength(20);
+  expect(colorForCountry("vn")).toBe(COUNTRY_DOT_PALETTE[0]);
+  expect(colorForCountry("jp")).toBe(COUNTRY_DOT_PALETTE[1]);
+  expect(colorForCountry("us")).toBe(COUNTRY_DOT_PALETTE[2]);
+  expect(colorForCountry("cn")).toBe(COUNTRY_DOT_PALETTE[3]);
+  expect(colorForCountry("vn")).not.toBe(colorForCountry("us"));
+});
+
+test("holidayInfoByKey includes per-country colors for shared dates", () => {
+  const map = holidayInfoByKey([
+    { date: "2026-01-01", name: "Tết dương lịch", country: "vn" },
+    { date: "2026-01-01", name: "New Year's Day", country: "us" },
+  ]);
+  const info = map.get("01/01/2026")!;
+  expect(info.countries).toEqual(["vn", "us"]);
+  expect(info.colors).toEqual([
+    colorForCountry("vn"),
+    colorForCountry("us"),
+  ]);
 });
 
 test("holidayInfoByKey over all countries includes dates present in one-country subset", () => {

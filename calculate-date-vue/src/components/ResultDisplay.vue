@@ -24,6 +24,8 @@ type CalCell = {
   inResult: boolean;
   excluded: boolean;
   holidayLabel: string | null;
+  /** One accent color per country that marks this date as a holiday. */
+  holidayColors: string[];
 };
 
 /** Union of all bundled country holidays — independent of form selection. */
@@ -95,7 +97,8 @@ const calendarMonths = computed(() => {
       const cells = slice.map((d) => {
         if (!isSameMonth(d, monthStart)) return null;
         const key = format(d, "dd/MM/yyyy");
-        const raw = holidayByKey.get(key)?.label ?? null;
+        const info = holidayByKey.get(key);
+        const raw = info?.label ?? null;
         // Chip labels are `${key} · names · codes`; strip key for title/aria.
         const holidayLabel =
           raw?.startsWith(`${key} · `) ? raw.slice(key.length + 3) : raw;
@@ -105,6 +108,7 @@ const calendarMonths = computed(() => {
           inResult: dateSet.value.has(key),
           excluded: excludedSet.value.has(key),
           holidayLabel,
+          holidayColors: info?.colors ?? [],
         };
       });
       if (cells.some(Boolean)) {
@@ -280,10 +284,17 @@ const cellBase =
                     @click="onChipClick(cell)"
                   >
                     <span
-                      v-if="cell.holidayLabel"
-                      class="pointer-events-none absolute top-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#0071e3]"
+                      v-if="cell.holidayColors.length"
+                      class="pointer-events-none absolute top-0.5 left-1/2 flex -translate-x-1/2 items-center gap-0.5"
                       aria-hidden="true"
-                    />
+                    >
+                      <span
+                        v-for="(color, di) in cell.holidayColors"
+                        :key="di"
+                        class="h-1 w-1 shrink-0 rounded-full"
+                        :style="{ backgroundColor: color }"
+                      />
+                    </span>
                     <span>{{ cell.label }}</span>
                     <span
                       v-if="cell.excluded"
@@ -313,10 +324,17 @@ const cellBase =
                     aria-hidden="true"
                   >
                     <span
-                      v-if="cell.holidayLabel"
-                      class="pointer-events-none absolute top-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#0071e3]"
+                      v-if="cell.holidayColors.length"
+                      class="pointer-events-none absolute top-0.5 left-1/2 flex -translate-x-1/2 items-center gap-0.5"
                       aria-hidden="true"
-                    />
+                    >
+                      <span
+                        v-for="(color, di) in cell.holidayColors"
+                        :key="di"
+                        class="h-1 w-1 shrink-0 rounded-full"
+                        :style="{ backgroundColor: color }"
+                      />
+                    </span>
                     {{ cell.label }}
                   </div>
                   <div
