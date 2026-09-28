@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { nextTick, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { format } from "date-fns";
 import DatePicker from "primevue/datepicker";
 import { daysOfWeek } from "@/composables/useDateCalculator";
+import {
+  vnHolidaysDataset,
+  resolveHolidayWindow,
+  filterHolidaysForWindow,
+  toExcludedKey,
+  mergeHolidaySelection,
+  removeKeys,
+} from "@/lib/holidays";
 
 const props = defineProps<{
   calcType: string;
@@ -24,6 +32,82 @@ const emit = defineEmits<{
   "update:excludedDates": [value: string[]];
   calculate: [];
 }>();
+
+const excludeVnHolidays = ref(false);
+/** Keys (`dd/MM/yyyy`) currently selected in the holiday chip list */
+const selectedHolidayKeys = ref<string[]>([]);
+/** Previous window's selected keys — used to strip stale holiday keys on window change */
+const prevHolidayKeysInWindow = ref<string[]>([]);
+
+const holidayWindow = computed(() =>
+  resolveHolidayWindow(props.calcType, props.startDate, props.endDate),
+);
+
+const holidaysInWindow = computed(() => {
+  const w = holidayWindow.value;
+  if (!w) return [];
+  return filterHolidaysForWindow(vnHolidaysDataset.holidays, w);
+});
+
+const holidayChips = computed(() =>
+  holidaysInWindow.value.map((h) => ({
+    key: toExcludedKey(h.date),
+    label: `${toExcludedKey(h.date)} · ${h.name}`,
+  })),
+);
+
+const canUseHolidays = computed(() => !!props.startDate);
+
+function applyHolidaySync(nextSelected: string[], keysInWindow: string[]) {
+  // Drop any holiday keys that were in the previous window selection handling,
+  // then union the new selection. Also remove keys that are in-window but unselected.
+  let next = removeKeys(props.excludedDates, prevHolidayKeysInWindow.value);
+  next = removeKeys(next, keysInWindow);
+  next = mergeHolidaySelection(next, nextSelected);
+  prevHolidayKeysInWindow.value = [...nextSelected];
+  emit("update:excludedDates", next);
+}
+
+function onToggleMaster(checked: boolean) {
+  excludeVnHolidays.value = checked;
+  const keysInWindow = holidayChips.value.map((c) => c.key);
+  if (!checked) {
+    selectedHolidayKeys.value = [];
+    applyHolidaySync([], keysInWindow);
+    return;
+  }
+  selectedHolidayKeys.value = [...keysInWindow];
+  applyHolidaySync(selectedHolidayKeys.value, keysInWindow);
+}
+
+function toggleHolidayChip(key: string) {
+  if (!excludeVnHolidays.value) return;
+  const set = new Set(selectedHolidayKeys.value);
+  if (set.has(key)) set.delete(key);
+  else set.add(key);
+  selectedHolidayKeys.value = [...set];
+  const keysInWindow = holidayChips.value.map((c) => c.key);
+  applyHolidaySync(selectedHolidayKeys.value, keysInWindow);
+}
+
+watch(
+  holidaysInWindow,
+  (list) => {
+    if (!excludeVnHolidays.value) {
+      prevHolidayKeysInWindow.value = [];
+      return;
+    }
+    const keysInWindow = list.map((h) => toExcludedKey(h.date));
+    const keySet = new Set(keysInWindow);
+    // Keep prior selection for keys still in window; newly entered keys default ON
+    const kept = selectedHolidayKeys.value.filter((k) => keySet.has(k));
+    const keptSet = new Set(kept);
+    const newly = keysInWindow.filter((k) => !keptSet.has(k));
+    selectedHolidayKeys.value = [...kept, ...newly];
+    applyHolidaySync(selectedHolidayKeys.value, keysInWindow);
+  },
+  { flush: "post" },
+);
 
 const shortDay = (label: string) =>
   label === "Chủ nhật" ? "CN" : label.replace("Thứ ", "T");
@@ -283,6 +367,68 @@ const segmentOn = "bg-white font-semibold shadow-sm";
           >
             {{ shortDay(day.label) }}
           </button>
+        </div>
+      </div>
+
+      <!-- Loại trừ ngày lễ VN -->
+      <div class="min-w-0">
+        <div class="flex items-center justify-between gap-3">
+          <label
+            class="text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+            for="exclude-vn-holidays"
+          >
+            Loại trừ ngày lễ VN
+          </label>
+          <input
+            id="exclude-vn-holidays"
+            type="checkbox"
+            class="size-4 accent-[#0071e3] disabled:opacity-40"
+            :checked="excludeVnHolidays"
+            :disabled="!canUseHolidays"
+            @change="
+              onToggleMaster(($event.target as HTMLInputElement).checked)
+            "
+          />
+        </div>
+        <p
+          v-if="!canUseHolidays"
+          class="mt-1 text-xs tracking-[-0.01em] text-[#86868b]"
+        >
+          Chọn ngày bắt đầu trước
+        </p>
+        <div
+          v-else-if="excludeVnHolidays"
+          class="animate-fade-in mt-2 motion-reduce:animate-none"
+        >
+          <p
+            v-if="!holidayChips.length"
+            class="text-xs tracking-[-0.01em] text-[#86868b]"
+          >
+            Không có ngày lễ trong khoảng này
+          </p>
+          <div
+            v-else
+            class="relative max-h-40 overflow-y-auto"
+          >
+            <div class="flex flex-wrap gap-1.5 pb-1">
+              <button
+                v-for="chip in holidayChips"
+                :key="chip.key"
+                type="button"
+                class="inline-flex cursor-pointer items-center rounded-full border py-[0.3rem] px-[0.65rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+                :class="
+                  selectedHolidayKeys.includes(chip.key)
+                    ? 'border-[#0071e3]/30 bg-[#0071e3]/10 text-[#0071e3]'
+                    : 'border-[#d2d2d7] bg-white/85 text-[#86868b]'
+                "
+                :aria-pressed="selectedHolidayKeys.includes(chip.key)"
+                :title="chip.label"
+                @click="toggleHolidayChip(chip.key)"
+              >
+                <span class="tabular-nums">{{ chip.label }}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
