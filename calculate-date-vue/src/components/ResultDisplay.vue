@@ -16,13 +16,18 @@ import {
 } from "date-fns";
 import type { ResultData } from "@/composables/useDateCalculator";
 import { daysOfWeek } from "@/composables/useDateCalculator";
+import { holidayInfoByKey } from "@/lib/holidays";
 
 type CalCell = {
   key: string;
   label: string;
   inResult: boolean;
   excluded: boolean;
+  holidayLabel: string | null;
 };
+
+/** Union of all bundled country holidays — independent of form selection. */
+const holidayByKey = holidayInfoByKey();
 
 /** `null` = empty pad (other month / leading-trailing gap). */
 type CalWeek = {
@@ -90,11 +95,16 @@ const calendarMonths = computed(() => {
       const cells = slice.map((d) => {
         if (!isSameMonth(d, monthStart)) return null;
         const key = format(d, "dd/MM/yyyy");
+        const raw = holidayByKey.get(key)?.label ?? null;
+        // Chip labels are `${key} · names · codes`; strip key for title/aria.
+        const holidayLabel =
+          raw?.startsWith(`${key} · `) ? raw.slice(key.length + 3) : raw;
         return {
           key,
           label: String(getDate(d)),
           inResult: dateSet.value.has(key),
           excluded: excludedSet.value.has(key),
+          holidayLabel,
         };
       });
       if (cells.some(Boolean)) {
@@ -138,6 +148,13 @@ const updateEdges = () => {
 const onChipClick = (cell: CalCell) => {
   if (cell.excluded) emit("restore", cell.key);
   else if (cell.inResult) emit("exclude", cell.key);
+};
+
+const cellActionLabel = (cell: CalCell) => {
+  const action = cell.excluded
+    ? `Khôi phục ${cell.key}`
+    : `Loại trừ ${cell.key}`;
+  return cell.holidayLabel ? `${action} — ${cell.holidayLabel}` : action;
 };
 
 const { isLoading, reset } = useInfiniteScroll(
@@ -258,14 +275,15 @@ const cellBase =
                             ? 'border-green-500/50 bg-green-500/15 font-semibold text-[#248a3d] hover:border-red-500/35 hover:bg-red-500/10 hover:text-[#d70015]'
                             : 'border-black/10 bg-white/95 text-[#3a3a3c] hover:border-red-500/35 hover:bg-red-500/10 hover:text-[#d70015]',
                     ]"
-                    :title="
-                      cell.excluded ? `Khôi phục ${cell.key}` : `Loại trừ ${cell.key}`
-                    "
-                    :aria-label="
-                      cell.excluded ? `Khôi phục ${cell.key}` : `Loại trừ ${cell.key}`
-                    "
+                    :title="cellActionLabel(cell)"
+                    :aria-label="cellActionLabel(cell)"
                     @click="onChipClick(cell)"
                   >
+                    <span
+                      v-if="cell.holidayLabel"
+                      class="pointer-events-none absolute top-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#0071e3]"
+                      aria-hidden="true"
+                    />
                     <span>{{ cell.label }}</span>
                     <span
                       v-if="cell.excluded"
@@ -282,9 +300,23 @@ const cellBase =
                   </button>
                   <div
                     v-else-if="cell"
-                    :class="[cellBase, 'pointer-events-none border border-transparent text-black/30']"
+                    :class="[
+                      cellBase,
+                      'border border-transparent text-black/30',
+                      cell.holidayLabel ? '' : 'pointer-events-none',
+                    ]"
+                    :title="
+                      cell.holidayLabel
+                        ? `${cell.key} — ${cell.holidayLabel}`
+                        : undefined
+                    "
                     aria-hidden="true"
                   >
+                    <span
+                      v-if="cell.holidayLabel"
+                      class="pointer-events-none absolute top-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#0071e3]"
+                      aria-hidden="true"
+                    />
                     {{ cell.label }}
                   </div>
                   <div
