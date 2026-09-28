@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { nextTick, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import { useDateCalculator } from "@/composables/useDateCalculator";
 import CalculatorForm from "@/components/CalculatorForm.vue";
 import CriteriaSummary from "@/components/CriteriaSummary.vue";
 import ResultDisplay from "@/components/ResultDisplay.vue";
+import {
+  vnHolidaysDataset,
+  resolveHolidayWindow,
+  filterHolidaysForWindow,
+  holidayKeys,
+  countExcludedHolidays,
+} from "@/lib/holidays";
 
 const {
   calcType,
@@ -18,6 +25,19 @@ const {
   totalCount,
   calculate,
 } = useDateCalculator();
+
+const vnHolidayExcludedCount = computed(() => {
+  const w = resolveHolidayWindow(
+    calcType.value,
+    startDate.value,
+    endDate.value,
+  );
+  if (!w) return 0;
+  const keys = holidayKeys(
+    filterHolidaysForWindow(vnHolidaysDataset.holidays, w),
+  );
+  return countExcludedHolidays(excludedDates.value, keys);
+});
 
 /** Full form while editing; compact summary after a successful calculate. */
 const editing = ref(true);
@@ -86,6 +106,7 @@ const onRestoreDate = (date: string) => {
           :methodType="methodType"
           :excludedDays="excludedDays"
           :excludedDates="excludedDates"
+          :vnHolidayExcludedCount="vnHolidayExcludedCount"
           @edit="editing = true"
         />
         <ResultDisplay
