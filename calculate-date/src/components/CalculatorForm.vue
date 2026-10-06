@@ -16,6 +16,18 @@ import {
   removeKeys,
   rehydrateHolidaySelection,
 } from "@/lib/holidays";
+import SegmentControl from "@/components/shared/SegmentControl.vue";
+import DateField from "@/components/shared/DateField.vue";
+
+const calcTypeOptions = [
+  { value: "1", label: "Khoảng ngày" },
+  { value: "2", label: "Cộng dồn" },
+];
+
+const methodTypeOptions = [
+  { value: "1", label: "Đủ số ngày chọn" },
+  { value: "2", label: "Đúng thời gian thực tế" },
+];
 
 const props = defineProps<{
   calcType: string;
@@ -249,9 +261,6 @@ const removeExcludedDate = (key: string) => {
   );
 };
 
-const segmentItem =
-  "flex cursor-pointer items-center justify-center rounded-lg px-2.5 py-2 text-center text-[0.8125rem] font-medium tracking-[-0.01em] text-[#1d1d1f] transition-[background-color,box-shadow,transform] duration-100 ease-out active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100";
-const segmentOn = "bg-white font-semibold shadow-sm";
 </script>
 
 <template>
@@ -268,73 +277,31 @@ const segmentOn = "bg-white font-semibold shadow-sm";
         >
           Kiểu tính
         </div>
-        <div
-          class="grid grid-cols-2 gap-0.5 rounded-[0.625rem] bg-[#e8e8ed] p-0.5"
-          role="radiogroup"
-          aria-label="Kiểu tính"
-        >
-          <label
-            :class="[segmentItem, calcType === '1' ? segmentOn : '']"
-          >
-            <input
-              class="sr-only"
-              type="radio"
-              name="calcType"
-              value="1"
-              :checked="calcType === '1'"
-              @change="emit('update:calcType', '1')"
-            />
-            Khoảng ngày
-          </label>
-          <label
-            :class="[segmentItem, calcType === '2' ? segmentOn : '']"
-          >
-            <input
-              class="sr-only"
-              type="radio"
-              name="calcType"
-              value="2"
-              :checked="calcType === '2'"
-              @change="emit('update:calcType', '2')"
-            />
-            Cộng dồn
-          </label>
-        </div>
+        <SegmentControl
+          :modelValue="calcType"
+          :options="calcTypeOptions"
+          ariaLabel="Kiểu tính"
+          @update:modelValue="emit('update:calcType', $event)"
+        />
       </div>
 
       <!-- Ngày -->
       <div class="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
-        <div class="min-w-0">
-          <div
-            class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
-          >
-            Ngày bắt đầu
-          </div>
-          <DatePicker
-            :modelValue="startDate"
-            @update:modelValue="emit('update:startDate', $event)"
-            dateFormat="dd/mm/yy"
-            showIcon
-            placeholder="Chọn ngày"
-            fluid
-          />
-        </div>
+        <DateField
+          label="Ngày bắt đầu"
+          :modelValue="startDate"
+          placeholder="Chọn ngày"
+          @update:modelValue="emit('update:startDate', $event)"
+        />
 
-        <div v-if="calcType === '1'" class="animate-fade-in min-w-0">
-          <div
-            class="mb-1.5 text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
-          >
-            Ngày kết thúc
-          </div>
-          <DatePicker
-            :modelValue="endDate"
-            @update:modelValue="emit('update:endDate', $event)"
-            dateFormat="dd/mm/yy"
-            showIcon
-            placeholder="Chọn ngày"
-            fluid
-          />
-        </div>
+        <DateField
+          v-if="calcType === '1'"
+          class="animate-fade-in"
+          label="Ngày kết thúc"
+          :modelValue="endDate"
+          placeholder="Chọn ngày"
+          @update:modelValue="emit('update:endDate', $event)"
+        />
 
         <div v-else class="animate-fade-in min-w-0">
           <div
@@ -364,38 +331,12 @@ const segmentOn = "bg-white font-semibold shadow-sm";
         >
           Cách tính
         </div>
-        <div
-          class="grid grid-cols-1 gap-0.5 rounded-[0.625rem] bg-[#e8e8ed] p-0.5 min-[360px]:grid-cols-2"
-          role="radiogroup"
-          aria-label="Cách tính"
-        >
-          <label
-            :class="[segmentItem, methodType === '1' ? segmentOn : '']"
-          >
-            <input
-              class="sr-only"
-              type="radio"
-              name="methodType"
-              value="1"
-              :checked="methodType === '1'"
-              @change="emit('update:methodType', '1')"
-            />
-            Đủ số ngày chọn
-          </label>
-          <label
-            :class="[segmentItem, methodType === '2' ? segmentOn : '']"
-          >
-            <input
-              class="sr-only"
-              type="radio"
-              name="methodType"
-              value="2"
-              :checked="methodType === '2'"
-              @change="emit('update:methodType', '2')"
-            />
-            Đúng thời gian thực tế
-          </label>
-        </div>
+        <SegmentControl
+          :modelValue="methodType"
+          :options="methodTypeOptions"
+          ariaLabel="Cách tính"
+          @update:modelValue="emit('update:methodType', $event)"
+        />
       </div>
 
       <!-- Loại trừ thứ -->
