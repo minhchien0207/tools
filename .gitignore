@@ -4,5 +4,6 @@
 .agents
 .claude
 .grok
+.pi
 .pi.worktrees/
 .worktrees/

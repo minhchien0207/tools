@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { nextTick, onMounted, ref } from "vue";
 import SegmentControl from "@/components/shared/SegmentControl.vue";
 import DateField from "@/components/shared/DateField.vue";
 import AgeResult from "@/components/results/AgeResult.vue";
@@ -26,8 +26,13 @@ const emit = defineEmits<{
 
 const birthFieldRef = ref<{ focus: () => void } | null>(null);
 
-onMounted(() => {
-  birthFieldRef.value?.focus();
+// Focus after paint so PrimeVue DatePicker overlay enter can apply position:absolute.
+// showOnFocus is false here — focus alone must not open the panel during masked typing.
+onMounted(async () => {
+  await nextTick();
+  requestAnimationFrame(() => {
+    birthFieldRef.value?.focus();
+  });
 });
 </script>
 
@@ -38,6 +43,7 @@ onMounted(() => {
       label="Ngày sinh"
       :modelValue="birthDate"
       placeholder="dd/mm/yyyy"
+      :showOnFocus="false"
       @update:modelValue="emit('update:birthDate', $event)"
     />
 
@@ -63,6 +69,7 @@ onMounted(() => {
       label="Ngày tính"
       :modelValue="asOfDate"
       placeholder="dd/mm/yyyy"
+      :showOnFocus="false"
       @update:modelValue="emit('update:asOfDate', $event)"
     />
 

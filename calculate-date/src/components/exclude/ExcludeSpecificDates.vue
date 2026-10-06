@@ -91,8 +91,7 @@ const onExcludeMonthChange = (event: { month: number; year: number }) => {
       <DatePicker
         :key="excludePickerKey"
         ref="excludePickerRef"
-        v-maska
-        data-maska="##/##/####"
+        v-maska="'##/##/####'"
         :modelValue="pickDate"
         dateFormat="dd/mm/yy"
         showIcon

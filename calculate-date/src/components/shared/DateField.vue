@@ -9,9 +9,12 @@ withDefaults(
     modelValue: Date | null;
     placeholder?: string;
     inputId?: string;
+    /** When false, calendar opens via the icon only (better for masked typing). */
+    showOnFocus?: boolean;
   }>(),
   {
     placeholder: "dd/mm/yyyy",
+    showOnFocus: true,
   },
 );
 
@@ -52,12 +55,12 @@ defineExpose({ focus });
       {{ label }}
     </div>
     <DatePicker
-      v-maska
-      data-maska="##/##/####"
+      v-maska="'##/##/####'"
       :modelValue="modelValue"
       :inputId="inputId"
       dateFormat="dd/mm/yy"
       showIcon
+      :showOnFocus="showOnFocus"
       :placeholder="placeholder"
       fluid
       @update:modelValue="onUpdate"
