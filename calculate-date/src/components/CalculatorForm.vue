@@ -1,23 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { nextTick, ref } from "vue";
 import { format } from "date-fns";
 import DatePicker from "primevue/datepicker";
 import { daysOfWeek } from "@/composables/useDateCalculator";
-import {
-  HOLIDAY_COUNTRIES,
-  type CountryCode,
-  colorForCountry,
-  getHolidaysForCountries,
-  mergeHolidayChips,
-  resolveHolidayWindow,
-  filterHolidaysForWindow,
-  toExcludedKey,
-  mergeHolidaySelection,
-  removeKeys,
-  rehydrateHolidaySelection,
-} from "@/lib/holidays";
+import { useHolidayExclude } from "@/composables/useHolidayExclude";
 import SegmentControl from "@/components/shared/SegmentControl.vue";
 import DateField from "@/components/shared/DateField.vue";
+import HolidayExclude from "@/components/exclude/HolidayExclude.vue";
 
 const calcTypeOptions = [
   { value: "1", label: "Khoảng ngày" },
@@ -50,129 +39,17 @@ const emit = defineEmits<{
   calculate: [];
 }>();
 
-const excludeHolidays = ref(false);
-/** Multi-select country codes; persists across master off→on */
-const selectedCountries = ref<CountryCode[]>([]);
-/** Keys (`dd/MM/yyyy`) currently selected in the holiday chip list */
-const selectedHolidayKeys = ref<string[]>([]);
-/** Previous window's selected keys — used to strip stale holiday keys on window change */
-const prevHolidayKeysInWindow = ref<string[]>([]);
-
-const holidayWindow = computed(() =>
-  resolveHolidayWindow(props.calcType, props.startDate, props.endDate),
-);
-
-const holidaysInWindow = computed(() => {
-  const w = holidayWindow.value;
-  if (!w || selectedCountries.value.length === 0) return [];
-  return filterHolidaysForWindow(
-    getHolidaysForCountries(selectedCountries.value),
-    w,
-  );
-});
-
-const holidayChips = computed(() => mergeHolidayChips(holidaysInWindow.value));
-
-const canUseHolidays = computed(() => !!props.startDate);
-
-function applyRehydratedHolidayState() {
-  const w = holidayWindow.value;
-  const countriesWithHits: CountryCode[] = [];
-  if (w) {
-    const excluded = new Set(props.excludedDates);
-    for (const { code } of HOLIDAY_COUNTRIES) {
-      const keys = filterHolidaysForWindow(
-        getHolidaysForCountries([code]),
-        w,
-      ).map((h) => toExcludedKey(h.date));
-      if (keys.some((k) => excluded.has(k))) countriesWithHits.push(code);
-    }
-  }
-
-  selectedCountries.value = countriesWithHits;
-
-  const keysInWindow = w
-    ? mergeHolidayChips(
-        filterHolidaysForWindow(
-          getHolidaysForCountries(countriesWithHits),
-          w,
-        ),
-      ).map((c) => c.key)
-    : [];
-
-  const { selectedKeys, masterOn } = rehydrateHolidaySelection(
-    props.excludedDates,
-    keysInWindow,
-  );
-  selectedHolidayKeys.value = selectedKeys;
-  excludeHolidays.value = masterOn;
-  // Keep prev in sync with selected so later applyHolidaySync won't strip wrongly.
-  prevHolidayKeysInWindow.value = masterOn ? [...selectedKeys] : [];
-}
-
-applyRehydratedHolidayState();
-
-function applyHolidaySync(nextSelected: string[], keysInWindow: string[]) {
-  // Drop any holiday keys that were in the previous window selection handling,
-  // then union the new selection. Also remove keys that are in-window but unselected.
-  let next = removeKeys(props.excludedDates, prevHolidayKeysInWindow.value);
-  next = removeKeys(next, keysInWindow);
-  next = mergeHolidaySelection(next, nextSelected);
-  prevHolidayKeysInWindow.value = [...nextSelected];
-  emit("update:excludedDates", next);
-}
-
-function onToggleMaster(checked: boolean) {
-  excludeHolidays.value = checked;
-  const keysInWindow = holidayChips.value.map((c) => c.key);
-  if (!checked) {
-    selectedHolidayKeys.value = [];
-    applyHolidaySync([], keysInWindow);
-    // Keep selectedCountries so pills restore on next master on.
-    return;
-  }
-  selectedHolidayKeys.value = [...keysInWindow];
-  applyHolidaySync(selectedHolidayKeys.value, keysInWindow);
-}
-
-function toggleCountry(code: CountryCode) {
-  if (!excludeHolidays.value) return;
-  const set = new Set(selectedCountries.value);
-  if (set.has(code)) set.delete(code);
-  else set.add(code);
-  selectedCountries.value = HOLIDAY_COUNTRIES.map((c) => c.code).filter((c) =>
-    set.has(c),
-  );
-}
-
-function toggleHolidayChip(key: string) {
-  if (!excludeHolidays.value) return;
-  const set = new Set(selectedHolidayKeys.value);
-  if (set.has(key)) set.delete(key);
-  else set.add(key);
-  selectedHolidayKeys.value = [...set];
-  const keysInWindow = holidayChips.value.map((c) => c.key);
-  applyHolidaySync(selectedHolidayKeys.value, keysInWindow);
-}
-
-watch(
+const {
+  excludeHolidays,
+  selectedCountries,
+  selectedHolidayKeys,
   holidayChips,
-  (chips) => {
-    if (!excludeHolidays.value) {
-      prevHolidayKeysInWindow.value = [];
-      return;
-    }
-    const keysInWindow = chips.map((c) => c.key);
-    const keySet = new Set(keysInWindow);
-    // Keep prior selection for keys still in window; newly entered keys default ON
-    const kept = selectedHolidayKeys.value.filter((k) => keySet.has(k));
-    const keptSet = new Set(kept);
-    const newly = keysInWindow.filter((k) => !keptSet.has(k));
-    selectedHolidayKeys.value = [...kept, ...newly];
-    applyHolidaySync(selectedHolidayKeys.value, keysInWindow);
-  },
-  { flush: "post" },
-);
+  canUseHolidays,
+  onToggleMaster,
+  toggleCountry,
+  toggleHolidayChip,
+  removeExcludedDate,
+} = useHolidayExclude(props, emit);
 
 const shortDay = (label: string) =>
   label === "Chủ nhật" ? "CN" : label.replace("Thứ ", "T");
@@ -247,18 +124,6 @@ const syncExcludePickerMonth = async () => {
 /** PrimeVue month-change uses 1-based month. */
 const onExcludeMonthChange = (event: { month: number; year: number }) => {
   rememberExcludeView(event.month - 1, event.year);
-};
-
-const removeExcludedDate = (key: string) => {
-  // Route holiday removals through chip sync so selection/prev stay aligned.
-  if (excludeHolidays.value && selectedHolidayKeys.value.includes(key)) {
-    toggleHolidayChip(key);
-    return;
-  }
-  emit(
-    "update:excludedDates",
-    props.excludedDates.filter((d) => d !== key),
-  );
 };
 
 </script>
@@ -369,114 +234,16 @@ const removeExcludedDate = (key: string) => {
         </div>
       </div>
 
-      <!-- Loại trừ ngày lễ -->
-      <div class="min-w-0">
-        <div class="flex items-center justify-between gap-3">
-          <label
-            class="text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
-            for="exclude-holidays"
-          >
-            Loại trừ ngày lễ
-          </label>
-          <input
-            id="exclude-holidays"
-            type="checkbox"
-            class="size-4 accent-[#0071e3] disabled:opacity-40"
-            :checked="excludeHolidays"
-            :disabled="!canUseHolidays"
-            @change="
-              onToggleMaster(($event.target as HTMLInputElement).checked)
-            "
-          />
-        </div>
-        <p
-          v-if="!canUseHolidays"
-          class="mt-1 text-xs tracking-[-0.01em] text-[#86868b]"
-        >
-          Chọn ngày bắt đầu trước
-        </p>
-        <div
-          v-else-if="excludeHolidays"
-          class="animate-fade-in mt-2 motion-reduce:animate-none"
-        >
-          <div
-            class="flex flex-wrap gap-1.5"
-            role="group"
-            aria-label="Quốc gia ngày lễ"
-          >
-            <button
-              v-for="country in HOLIDAY_COUNTRIES"
-              :key="country.code"
-              type="button"
-              class="inline-flex min-w-10 cursor-pointer items-center gap-1.5 rounded-full border px-[0.65rem] py-[0.4rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-              :class="
-                selectedCountries.includes(country.code)
-                  ? 'border-[#0071e3]/35 bg-[#0071e3]/10 text-[#0071e3]'
-                  : 'border-[#d2d2d7] bg-white/85 text-[#1d1d1f]'
-              "
-              :aria-pressed="selectedCountries.includes(country.code)"
-              :aria-label="country.label"
-              :title="country.label"
-              @click="toggleCountry(country.code)"
-            >
-              <span
-                class="h-2 w-2 shrink-0 rounded-full"
-                :style="{ backgroundColor: colorForCountry(country.code) }"
-                aria-hidden="true"
-              />
-              {{ country.short }}
-            </button>
-          </div>
-          <p
-            v-if="!selectedCountries.length"
-            class="mt-2 text-xs tracking-[-0.01em] text-[#86868b]"
-          >
-            Chọn quốc gia
-          </p>
-          <template v-else>
-            <p
-              v-if="!holidayChips.length"
-              class="mt-2 text-xs tracking-[-0.01em] text-[#86868b]"
-            >
-              Không có ngày lễ trong khoảng này
-            </p>
-            <div
-              v-else
-              class="relative mt-2 max-h-40 overflow-y-auto"
-            >
-              <div class="flex flex-wrap gap-1.5 pb-1">
-                <button
-                  v-for="chip in holidayChips"
-                  :key="chip.key"
-                  type="button"
-                  class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border py-[0.3rem] px-[0.65rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-                  :class="
-                    selectedHolidayKeys.includes(chip.key)
-                      ? 'border-[#0071e3]/30 bg-[#0071e3]/10 text-[#0071e3]'
-                      : 'border-[#d2d2d7] bg-white/85 text-[#86868b]'
-                  "
-                  :aria-pressed="selectedHolidayKeys.includes(chip.key)"
-                  :title="chip.label"
-                  @click="toggleHolidayChip(chip.key)"
-                >
-                  <span
-                    class="inline-flex shrink-0 items-center gap-0.5"
-                    aria-hidden="true"
-                  >
-                    <span
-                      v-for="code in chip.countries"
-                      :key="code"
-                      class="h-1.5 w-1.5 rounded-full"
-                      :style="{ backgroundColor: colorForCountry(code) }"
-                    />
-                  </span>
-                  <span class="tabular-nums">{{ chip.label }}</span>
-                </button>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
+      <HolidayExclude
+        :excludeHolidays="excludeHolidays"
+        :selectedCountries="selectedCountries"
+        :selectedHolidayKeys="selectedHolidayKeys"
+        :holidayChips="holidayChips"
+        :canUseHolidays="canUseHolidays"
+        :onToggleMaster="onToggleMaster"
+        :toggleCountry="toggleCountry"
+        :toggleHolidayChip="toggleHolidayChip"
+      />
 
       <!-- Loại trừ ngày cụ thể -->
       <div class="min-w-0">
