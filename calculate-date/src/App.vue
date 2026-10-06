@@ -3,7 +3,7 @@ import { computed, nextTick, ref } from "vue";
 import { useDateCalculator } from "@/composables/useDateCalculator";
 import CalculatorForm from "@/components/CalculatorForm.vue";
 import CriteriaSummary from "@/components/CriteriaSummary.vue";
-import ResultDisplay from "@/components/ResultDisplay.vue";
+import ResultDisplay from "@/components/results/ResultDisplay.vue";
 import {
   getHolidaysForCountries,
   resolveHolidayWindow,
