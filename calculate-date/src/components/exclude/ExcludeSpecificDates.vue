@@ -2,6 +2,7 @@
 import { nextTick, ref } from "vue";
 import { format } from "date-fns";
 import DatePicker from "primevue/datepicker";
+import { vMaska } from "maska/vue";
 
 const props = defineProps<{
   excludedDates: string[];
@@ -90,10 +91,12 @@ const onExcludeMonthChange = (event: { month: number; year: number }) => {
       <DatePicker
         :key="excludePickerKey"
         ref="excludePickerRef"
+        v-maska
+        data-maska="##/##/####"
         :modelValue="pickDate"
         dateFormat="dd/mm/yy"
         showIcon
-        placeholder="Thêm ngày"
+        placeholder="dd/mm/yyyy"
         fluid
         @update:modelValue="addExcludedDate"
         @show="syncExcludePickerMonth"

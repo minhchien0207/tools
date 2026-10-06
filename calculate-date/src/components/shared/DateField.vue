@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import DatePicker from "primevue/datepicker";
+import { vMaska } from "maska/vue";
 
-defineProps<{
-  label: string;
-  modelValue: Date | null;
-  placeholder?: string;
-  inputId?: string;
-}>();
+withDefaults(
+  defineProps<{
+    label: string;
+    modelValue: Date | null;
+    placeholder?: string;
+    inputId?: string;
+  }>(),
+  {
+    placeholder: "dd/mm/yyyy",
+  },
+);
 
 const emit = defineEmits<{
   "update:modelValue": [value: Date | null];
@@ -46,6 +52,8 @@ defineExpose({ focus });
       {{ label }}
     </div>
     <DatePicker
+      v-maska
+      data-maska="##/##/####"
       :modelValue="modelValue"
       :inputId="inputId"
       dateFormat="dd/mm/yy"
