@@ -29,7 +29,7 @@ const emit = defineEmits<{
       <DateField
         label="Ngày bắt đầu"
         :modelValue="startDate"
-        placeholder="Chọn ngày"
+        placeholder="dd/mm/yyyy"
         @update:modelValue="emit('update:startDate', $event)"
       />
 
@@ -38,7 +38,7 @@ const emit = defineEmits<{
         class="animate-fade-in"
         label="Ngày kết thúc"
         :modelValue="endDate"
-        placeholder="Chọn ngày"
+        placeholder="dd/mm/yyyy"
         @update:modelValue="emit('update:endDate', $event)"
       />
 

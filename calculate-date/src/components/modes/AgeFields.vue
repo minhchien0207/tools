@@ -37,7 +37,7 @@ onMounted(() => {
       ref="birthFieldRef"
       label="Ngày sinh"
       :modelValue="birthDate"
-      placeholder="Chọn ngày"
+      placeholder="dd/mm/yyyy"
       @update:modelValue="emit('update:birthDate', $event)"
     />
 
@@ -62,7 +62,7 @@ onMounted(() => {
       class="animate-fade-in"
       label="Ngày tính"
       :modelValue="asOfDate"
-      placeholder="Chọn ngày"
+      placeholder="dd/mm/yyyy"
       @update:modelValue="emit('update:asOfDate', $event)"
     />
 
