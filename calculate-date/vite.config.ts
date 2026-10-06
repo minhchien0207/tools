@@ -5,7 +5,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/tools/calculate-date-vue/',
+  base: '/tools/calculate-date/',
   plugins: [
     vue(),
     tailwindcss(),

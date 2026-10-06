@@ -1,11 +1,11 @@
-name: Deploy Calculate Date Vue to GitHub Pages
+name: Deploy Calculate Date to GitHub Pages
 
 on:
   push:
     branches:
       - master
     paths:
-      - 'calculate-date-vue/**'
+      - 'calculate-date/**'
 
 permissions:
   contents: write
@@ -19,13 +19,13 @@ jobs:
 
       - name: Install and Build 🔧
         run: |
-          cd calculate-date-vue
+          cd calculate-date
           npm install
           npm run build
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: calculate-date-vue/dist
+          folder: calculate-date/dist
           branch: gh-pages
-          target-folder: calculate-date-vue
+          target-folder: calculate-date
