@@ -211,4 +211,3 @@ Rules:
 - Age mode usable without Calculate; default as-of today; autofocus birth; shows Y/M/D + total days.
 - Range/accumulate + multi-country holidays behave as before.
 - Folders `shared/`, `exclude/`, `modes/`, `results/` make feature ownership obvious at a glance.
-}
