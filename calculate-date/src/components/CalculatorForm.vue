@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useHolidayExclude } from "@/composables/useHolidayExclude";
+import type { AgeResultData } from "@/composables/useAgeCalculator";
 import SegmentControl from "@/components/shared/SegmentControl.vue";
 import DateCalcFields from "@/components/modes/DateCalcFields.vue";
+import AgeFields from "@/components/modes/AgeFields.vue";
 import HolidayExclude from "@/components/exclude/HolidayExclude.vue";
 import ExcludeWeekdays from "@/components/exclude/ExcludeWeekdays.vue";
 import ExcludeSpecificDates from "@/components/exclude/ExcludeSpecificDates.vue";
@@ -9,6 +11,7 @@ import ExcludeSpecificDates from "@/components/exclude/ExcludeSpecificDates.vue"
 const calcTypeOptions = [
   { value: "1", label: "Khoảng ngày" },
   { value: "2", label: "Cộng dồn" },
+  { value: "3", label: "Tính tuổi" },
 ];
 
 const props = defineProps<{
@@ -19,6 +22,11 @@ const props = defineProps<{
   methodType: string;
   excludedDays: number[];
   excludedDates: string[];
+  birthDate: Date | null;
+  asOfMode: "today" | "date";
+  asOfDate: Date | null;
+  ageResult: AgeResultData | null;
+  asOfInvalid: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -29,6 +37,9 @@ const emit = defineEmits<{
   "update:methodType": [value: string];
   "update:excludedDays": [value: number[]];
   "update:excludedDates": [value: string[]];
+  "update:birthDate": [value: Date | null];
+  "update:asOfMode": [value: "today" | "date"];
+  "update:asOfDate": [value: Date | null];
   calculate: [];
 }>();
 
@@ -67,43 +78,58 @@ const {
         />
       </div>
 
-      <DateCalcFields
-        :calcType="calcType"
-        :startDate="startDate"
-        :endDate="endDate"
-        :totalDays="totalDays"
-        :methodType="methodType"
-        @update:startDate="emit('update:startDate', $event)"
-        @update:endDate="emit('update:endDate', $event)"
-        @update:totalDays="emit('update:totalDays', $event)"
-        @update:methodType="emit('update:methodType', $event)"
-      />
+      <template v-if="calcType !== '3'">
+        <DateCalcFields
+          :calcType="calcType"
+          :startDate="startDate"
+          :endDate="endDate"
+          :totalDays="totalDays"
+          :methodType="methodType"
+          @update:startDate="emit('update:startDate', $event)"
+          @update:endDate="emit('update:endDate', $event)"
+          @update:totalDays="emit('update:totalDays', $event)"
+          @update:methodType="emit('update:methodType', $event)"
+        />
 
-      <ExcludeWeekdays
-        :modelValue="excludedDays"
-        @update:modelValue="emit('update:excludedDays', $event)"
-      />
+        <ExcludeWeekdays
+          :modelValue="excludedDays"
+          @update:modelValue="emit('update:excludedDays', $event)"
+        />
 
-      <HolidayExclude
-        :excludeHolidays="excludeHolidays"
-        :selectedCountries="selectedCountries"
-        :selectedHolidayKeys="selectedHolidayKeys"
-        :holidayChips="holidayChips"
-        :canUseHolidays="canUseHolidays"
-        :onToggleMaster="onToggleMaster"
-        :toggleCountry="toggleCountry"
-        :toggleHolidayChip="toggleHolidayChip"
-      />
+        <HolidayExclude
+          :excludeHolidays="excludeHolidays"
+          :selectedCountries="selectedCountries"
+          :selectedHolidayKeys="selectedHolidayKeys"
+          :holidayChips="holidayChips"
+          :canUseHolidays="canUseHolidays"
+          :onToggleMaster="onToggleMaster"
+          :toggleCountry="toggleCountry"
+          :toggleHolidayChip="toggleHolidayChip"
+        />
 
-      <ExcludeSpecificDates
-        :excludedDates="excludedDates"
-        :startDate="startDate"
-        @update:excludedDates="emit('update:excludedDates', $event)"
-        @remove="removeExcludedDate"
+        <ExcludeSpecificDates
+          :excludedDates="excludedDates"
+          :startDate="startDate"
+          @update:excludedDates="emit('update:excludedDates', $event)"
+          @remove="removeExcludedDate"
+        />
+      </template>
+
+      <AgeFields
+        v-else
+        :birthDate="birthDate"
+        :asOfMode="asOfMode"
+        :asOfDate="asOfDate"
+        :result="ageResult"
+        :asOfInvalid="asOfInvalid"
+        @update:birthDate="emit('update:birthDate', $event)"
+        @update:asOfMode="emit('update:asOfMode', $event)"
+        @update:asOfDate="emit('update:asOfDate', $event)"
       />
     </div>
 
     <div
+      v-if="calcType !== '3'"
       class="border-t border-black/5 bg-[#f5f5f7]/65 px-4 pt-3 pb-4 backdrop-blur-md sm:px-5 sm:pt-3.5 sm:pb-4.5"
     >
       <button

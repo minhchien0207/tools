@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useDateCalculator } from "@/composables/useDateCalculator";
+import { useAgeCalculator } from "@/composables/useAgeCalculator";
 import CalculatorForm from "@/components/CalculatorForm.vue";
 import CriteriaSummary from "@/components/CriteriaSummary.vue";
 import ResultDisplay from "@/components/results/ResultDisplay.vue";
@@ -26,6 +27,14 @@ const {
   calculate,
 } = useDateCalculator();
 
+const {
+  birthDate,
+  asOfMode,
+  asOfDate,
+  result: ageResult,
+  asOfInvalid,
+} = useAgeCalculator();
+
 const holidayExcludedCount = computed(() => {
   const w = resolveHolidayWindow(
     calcType.value,
@@ -48,6 +57,10 @@ const holidayExcludedCount = computed(() => {
 
 /** Full form while editing; compact summary after a successful calculate. */
 const editing = ref(true);
+
+watch(calcType, (t) => {
+  if (t === "3") editing.value = true;
+});
 
 const onCalculate = async () => {
   if (!calculate()) return;
@@ -88,13 +101,13 @@ const onRestoreDate = (date: string) => {
         <p
           class="mx-auto mt-2 max-w-md text-[0.9375rem] leading-snug tracking-[-0.01em] text-[#8e8e93]"
         >
-          Tính khoảng ngày hoặc cộng dồn, có loại trừ thứ
+          Tính khoảng ngày, cộng dồn hoặc tuổi
         </p>
       </header>
 
       <div class="flex flex-col gap-5">
         <CalculatorForm
-          v-if="editing"
+          v-if="calcType === '3' || editing"
           v-model:calcType="calcType"
           v-model:startDate="startDate"
           v-model:endDate="endDate"
@@ -102,10 +115,15 @@ const onRestoreDate = (date: string) => {
           v-model:methodType="methodType"
           v-model:excludedDays="excludedDays"
           v-model:excludedDates="excludedDates"
+          v-model:birthDate="birthDate"
+          v-model:asOfMode="asOfMode"
+          v-model:asOfDate="asOfDate"
+          :ageResult="ageResult"
+          :asOfInvalid="asOfInvalid"
           @calculate="onCalculate"
         />
         <CriteriaSummary
-          v-else
+          v-else-if="calcType !== '3'"
           :calcType="calcType"
           :startDate="startDate"
           :endDate="endDate"
@@ -117,6 +135,7 @@ const onRestoreDate = (date: string) => {
           @edit="editing = true"
         />
         <ResultDisplay
+          v-if="calcType !== '3'"
           :result="result"
           :maxRow="maxRow"
           :totalCount="totalCount"
