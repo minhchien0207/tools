@@ -47,7 +47,6 @@ const props = defineProps<{
   result: ResultData | null;
   maxRow: number;
   totalCount: number;
-  excludedDates: string[];
 }>();
 
 const emit = defineEmits<{
@@ -69,7 +68,9 @@ const dateSet = computed(() => {
   return set;
 });
 
-const excludedSet = computed(() => new Set(props.excludedDates));
+const excludedSet = computed(
+  () => new Set(props.result?.excludedDates ?? []),
+);
 
 /**
  * One grid per month (normal calendar): leading/trailing cells empty.
@@ -207,33 +208,31 @@ const cellBase =
 </script>
 
 <template>
-  <div>
+  <div v-if="result" class="result-card">
     <div
-      v-if="result"
-      class="animate-scale-in flex max-h-[min(70dvh,52rem)] flex-col overflow-hidden rounded-[1.25rem] border border-white/70 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_8px_28px_rgba(0,0,0,0.06)] backdrop-blur-[20px] backdrop-saturate-150"
+      class="animate-scale-in flex max-h-[min(70dvh,52rem)] flex-col overflow-hidden rounded-[1.25rem] border border-white/80 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.06)]"
     >
       <div
-        class="flex shrink-0 items-center justify-between gap-3 border-b border-black/10 bg-white/70 px-4 py-3.5 backdrop-blur-md backdrop-saturate-150 sm:px-5"
+        class="flex shrink-0 items-center border-b border-black/8 bg-white px-4 py-3 sm:px-5"
       >
-        <h2 class="text-[1.0625rem] font-semibold tracking-[-0.02em] text-[#1c1c1e]">
-          Bảng kết quả
+        <h2 class="text-[1.0625rem] font-semibold tracking-[-0.02em] text-label">
+          Kết quả
         </h2>
-        <span class="text-sm text-[#8e8e93] tabular-nums">{{ totalCount }} ngày</span>
       </div>
 
-      <div v-if="calendarMonths.length === 0" class="px-4 py-12 text-center text-[#8e8e93]">
+      <div v-if="calendarMonths.length === 0" class="px-4 py-12 text-center text-secondary">
         Không có ngày nào phù hợp
       </div>
 
       <template v-else>
         <div
-          class="grid w-full shrink-0 grid-cols-7 border-b border-black/10 bg-[#f2f2f7]/90 backdrop-blur-md backdrop-saturate-150"
+          class="grid w-full shrink-0 grid-cols-7 border-b border-black/8 bg-canvas"
           aria-hidden="true"
         >
           <div
             v-for="day in daysOfWeek"
             :key="day.value"
-            class="px-0.5 py-2.5 text-center text-[0.6875rem] font-semibold tracking-[0.02em] text-[#8e8e93]"
+            class="px-0.5 py-2.5 text-center text-[0.6875rem] font-semibold tracking-[0.02em] text-secondary"
           >
             {{ shortLabel(day.label) }}
           </div>
@@ -252,7 +251,7 @@ const cellBase =
               class="flex flex-col gap-1"
             >
               <div
-                class="mx-1 mb-0.5 rounded-md bg-sky-50 px-2 py-1 text-xs font-semibold tracking-[-0.01em] text-sky-700"
+                class="mx-1 px-2 py-1 text-xs font-semibold tracking-[-0.01em] text-secondary"
               >
                 {{ month.label }}
               </div>
@@ -298,13 +297,13 @@ const cellBase =
                     <span>{{ cell.label }}</span>
                     <span
                       v-if="cell.excluded"
-                      class="pointer-events-none absolute -top-1 -right-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-[#34c759] text-[0.6875rem] leading-none font-bold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100 motion-reduce:transition-none"
+                      class="cal-hint pointer-events-none absolute -top-1 -right-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-success text-[0.6875rem] leading-none font-bold text-white opacity-0 shadow-sm transition-opacity motion-reduce:transition-none"
                       aria-hidden="true"
                       >+</span
                     >
                     <span
                       v-else
-                      class="pointer-events-none absolute -top-1 -right-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-[#ff3b30] text-[0.6875rem] leading-none font-bold text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100 motion-reduce:transition-none"
+                      class="cal-hint pointer-events-none absolute -top-1 -right-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[0.6875rem] leading-none font-bold text-white opacity-0 shadow-sm transition-opacity motion-reduce:transition-none"
                       aria-hidden="true"
                       >×</span
                     >
@@ -348,7 +347,7 @@ const cellBase =
           </div>
           <div
             v-if="visibleMonths < calendarMonths.length"
-            class="px-3 pt-2 pb-3 text-center text-xs text-[#8e8e93] tabular-nums"
+            class="px-3 pt-2 pb-3 text-center text-xs text-secondary tabular-nums"
             aria-live="polite"
           >
             {{
@@ -359,19 +358,22 @@ const cellBase =
           </div>
         </div>
 
-        <div
-          class="shrink-0 bg-white/70 shadow-[0_-8px_20px_rgba(0,0,0,0.04)] backdrop-blur-md backdrop-saturate-150"
-        >
-          <div class="grid w-full grid-cols-7 border-t border-black/10 bg-[#f2f2f7]/85">
+        <div class="shrink-0 bg-white shadow-[0_-8px_20px_rgba(0,0,0,0.04)]">
+          <div class="grid w-full grid-cols-7 border-t border-black/8 bg-canvas">
             <div
               v-for="day in daysOfWeek"
               :key="day.value"
-              class="border-r border-black/10 px-0.5 py-2 text-center text-[0.8125rem] font-semibold text-[#1c1c1e] tabular-nums last:border-r-0"
+              class="flex flex-col items-center gap-0.5 border-r border-black/8 px-0.5 py-2 last:border-r-0"
             >
-              {{ result.data[day.value].length }}
+              <span class="text-[0.625rem] font-semibold tracking-[0.02em] text-secondary">{{
+                shortLabel(day.label)
+              }}</span>
+              <span class="text-[0.8125rem] font-semibold text-label tabular-nums">{{
+                result.data[day.value].length
+              }}</span>
             </div>
           </div>
-          <div class="flex items-center justify-between bg-[#007aff] px-5 py-3.5 text-white">
+          <div class="flex items-center justify-between bg-accent px-5 py-3.5 text-white">
             <span class="text-[0.9375rem] font-medium text-white/90"
               >Tổng số ngày hợp lệ</span
             >
@@ -385,38 +387,16 @@ const cellBase =
         </div>
       </template>
     </div>
-
-    <div
-      v-else
-      class="flex min-h-[220px] flex-col items-center justify-center rounded-[1.25rem] border border-dashed border-black/20 bg-white/45 p-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_8px_28px_rgba(0,0,0,0.06)] backdrop-blur-[20px] backdrop-saturate-150"
-    >
-      <div
-        class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#007aff]/10 text-[#007aff]"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-      </div>
-      <h3 class="text-base font-semibold tracking-[-0.01em] text-[#1c1c1e]">Chưa có dữ liệu</h3>
-      <p class="mt-1.5 max-w-sm text-sm leading-relaxed text-[#8e8e93]">
-        Điền biểu mẫu phía trên rồi nhấn “Tính kết quả”.
-      </p>
-    </div>
   </div>
 </template>
 
 <style scoped>
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .cal-hint {
+    opacity: 1;
+  }
+}
+
 /* Scroll-edge fade — mask combos are awkward as pure utilities. */
 .week-scroll {
   -webkit-overflow-scrolling: touch;

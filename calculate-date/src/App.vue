@@ -85,61 +85,70 @@ const onRestoreDate = (date: string) => {
   excludedDates.value = excludedDates.value.filter((d) => d !== date);
   calculate();
 };
+
+const showDateResult = computed(
+  () => calcType.value !== "3" && result.value !== null,
+);
 </script>
 
 <template>
   <div
-    class="min-h-dvh bg-[radial-gradient(1200px_600px_at_50%_-10%,rgba(0,122,255,0.08),transparent_60%),#f2f2f7] font-[system-ui,-apple-system,'SF_Pro_Text','Segoe_UI',sans-serif] text-[#1c1c1e]"
+    class="min-h-dvh bg-[radial-gradient(900px_420px_at_50%_-8%,rgba(0,122,255,0.07),transparent_55%),var(--color-canvas)] font-[system-ui,-apple-system,'SF_Pro_Text','Segoe_UI',sans-serif] text-label"
   >
-    <div class="mx-auto max-w-5xl space-y-7 px-4 py-10 sm:px-6 lg:px-8">
-      <header class="text-center">
+    <div
+      class="mx-auto px-4 py-8 sm:px-6 lg:px-8"
+      :class="showDateResult ? 'max-w-5xl' : 'max-w-[28rem]'"
+    >
+      <header class="mb-6" :class="showDateResult ? '' : 'text-center'">
         <h1
-          class="text-[clamp(1.75rem,4vw,2.25rem)] leading-[1.1] font-bold tracking-[-0.025em] text-[#1c1c1e]"
+          class="text-[1.5rem] leading-tight font-semibold tracking-[-0.022em] text-label"
         >
-          Công cụ Tính toán Ngày
+          Tính ngày
         </h1>
-        <p
-          class="mx-auto mt-2 max-w-md text-[0.9375rem] leading-snug tracking-[-0.01em] text-[#8e8e93]"
-        >
-          Tính khoảng ngày, cộng dồn hoặc tuổi
-        </p>
       </header>
 
-      <div class="flex flex-col gap-5">
-        <CalculatorForm
-          v-if="calcType === '3' || editing"
-          v-model:calcType="calcType"
-          v-model:startDate="startDate"
-          v-model:endDate="endDate"
-          v-model:totalDays="totalDays"
-          v-model:methodType="methodType"
-          v-model:excludedDays="excludedDays"
-          v-model:excludedDates="excludedDates"
-          v-model:birthDate="birthDate"
-          v-model:asOfMode="asOfMode"
-          v-model:asOfDate="asOfDate"
-          :ageResult="ageResult"
-          :asOfInvalid="asOfInvalid"
-          @calculate="onCalculate"
-        />
-        <CriteriaSummary
-          v-else-if="calcType !== '3'"
-          :calcType="calcType"
-          :startDate="startDate"
-          :endDate="endDate"
-          :totalDays="totalDays"
-          :methodType="methodType"
-          :excludedDays="excludedDays"
-          :excludedDates="excludedDates"
-          :holidayExcludedCount="holidayExcludedCount"
-          @edit="editing = true"
-        />
+      <div
+        :class="
+          showDateResult
+            ? 'grid items-start gap-5 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]'
+            : 'flex flex-col'
+        "
+      >
+        <div :class="showDateResult ? 'lg:sticky lg:top-4' : ''">
+          <CalculatorForm
+            v-if="calcType === '3' || editing"
+            v-model:calcType="calcType"
+            v-model:startDate="startDate"
+            v-model:endDate="endDate"
+            v-model:totalDays="totalDays"
+            v-model:methodType="methodType"
+            v-model:excludedDays="excludedDays"
+            v-model:excludedDates="excludedDates"
+            v-model:birthDate="birthDate"
+            v-model:asOfMode="asOfMode"
+            v-model:asOfDate="asOfDate"
+            :ageResult="ageResult"
+            :asOfInvalid="asOfInvalid"
+            @calculate="onCalculate"
+          />
+          <CriteriaSummary
+            v-else-if="calcType !== '3'"
+            :calcType="calcType"
+            :startDate="startDate"
+            :endDate="endDate"
+            :totalDays="totalDays"
+            :methodType="methodType"
+            :excludedDays="excludedDays"
+            :excludedDates="excludedDates"
+            :holidayExcludedCount="holidayExcludedCount"
+            @edit="editing = true"
+          />
+        </div>
         <ResultDisplay
-          v-if="calcType !== '3'"
+          v-if="showDateResult"
           :result="result"
           :maxRow="maxRow"
           :totalCount="totalCount"
-          :excludedDates="excludedDates"
           @exclude="onExcludeDate"
           @restore="onRestoreDate"
         />
@@ -190,7 +199,7 @@ const onRestoreDate = (date: string) => {
 }
 .p-datepicker .p-datepicker-input {
   border-radius: 0.625rem 0 0 0.625rem;
-  border-color: #d2d2d7;
+  border-color: var(--color-separator);
   background: rgba(255, 255, 255, 0.9);
   box-shadow: none;
   transition:
@@ -198,16 +207,16 @@ const onRestoreDate = (date: string) => {
     box-shadow 120ms ease-out;
 }
 .p-datepicker .p-datepicker-input:focus {
-  border-color: #0071e3;
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.18);
   outline: none;
 }
 .p-datepicker .p-datepicker-dropdown {
   border-radius: 0 0.625rem 0.625rem 0;
-  border-color: #d2d2d7;
+  border-color: var(--color-separator);
   border-left: 0;
   background: #f5f5f7;
-  color: #86868b;
+  color: var(--color-tertiary);
   transition:
     background-color 120ms ease-out,
     transform 100ms ease-out;

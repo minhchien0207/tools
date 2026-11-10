@@ -58,7 +58,7 @@ const {
 
 <template>
   <div
-    class="relative h-fit overflow-hidden rounded-[1.125rem] border border-[#d2d2d7]/70 bg-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_18px_rgba(0,0,0,0.04)] backdrop-blur-[20px] backdrop-saturate-150"
+    class="relative h-fit overflow-hidden rounded-[1.25rem] border border-separator/80 bg-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_18px_rgba(0,0,0,0.04)] backdrop-blur-[20px] backdrop-saturate-150"
   >
     <div
       class="flex flex-col gap-3.5 px-4 pt-4 pb-3.5 sm:gap-4 sm:px-5 sm:pt-4.5 sm:pb-4"
@@ -134,7 +134,7 @@ const {
     >
       <button
         type="button"
-        class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-[#0071e3] px-4.5 py-3 text-[0.9375rem] font-semibold tracking-[-0.015em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] transition-[background-color,transform] duration-100 ease-out hover:bg-[#0077ed] active:scale-[0.98] active:bg-[#006edb] motion-reduce:transition-none motion-reduce:active:scale-100"
+        class="inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-accent px-4.5 py-3 text-[0.9375rem] font-semibold tracking-[-0.015em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.22)] transition-[background-color,transform] duration-100 ease-out hover:bg-accent-hover active:scale-[0.98] active:bg-accent-press motion-reduce:transition-none motion-reduce:active:scale-100"
         @click="emit('calculate')"
       >
         Tính kết quả

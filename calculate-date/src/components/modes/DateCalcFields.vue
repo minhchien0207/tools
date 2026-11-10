@@ -57,7 +57,7 @@ const emit = defineEmits<{
               ($event.target as HTMLInputElement).valueAsNumber,
             )
           "
-          class="w-full rounded-[0.625rem] border border-[#d2d2d7] bg-white/90 px-3 py-[0.55rem] text-[0.9375rem] text-[#1d1d1f] outline-none transition-[border-color,box-shadow] duration-100 ease-out focus:border-[#0071e3] focus:shadow-[0_0_0_3px_rgba(0,113,227,0.18)]"
+          class="w-full rounded-[0.625rem] border border-separator bg-white/90 px-3 py-[0.55rem] text-[0.9375rem] text-[#1d1d1f] outline-none transition-[border-color,box-shadow] duration-100 ease-out focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,122,255,0.18)]"
           placeholder="Nhập số ngày"
         />
       </div>

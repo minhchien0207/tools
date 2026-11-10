@@ -255,6 +255,16 @@ export function countExcludedHolidays(
   return n;
 }
 
+/** Chip for non-holiday specific dates. Count only — listing keys wraps in the summary column. */
+export function specificExcludedChipLabel(
+  excludedDates: string[],
+  holidayExcludedCount: number,
+): string | null {
+  const n = excludedDates.length - holidayExcludedCount;
+  if (n <= 0) return null;
+  return `Ngày · ${n}`;
+}
+
 /** Restore chip/master state from excludedDates without forcing missing holidays on. */
 export function rehydrateHolidaySelection(
   excludedDates: string[],

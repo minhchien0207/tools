@@ -20,7 +20,7 @@ const segmentOn = "bg-white font-semibold shadow-sm";
 
 <template>
   <div
-    class="grid gap-0.5 rounded-[0.625rem] bg-[#e8e8ed] p-0.5"
+    class="grid gap-0.5 rounded-[0.625rem] bg-fill p-0.5"
     :style="{
       gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))`,
     }"

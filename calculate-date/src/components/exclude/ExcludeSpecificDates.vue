@@ -106,7 +106,7 @@ const onExcludeMonthChange = (event: { month: number; year: number }) => {
           v-for="key in excludedDates"
           :key="key"
           type="button"
-          class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[#0071e3]/30 bg-[#0071e3]/10 py-[0.3rem] pr-[0.55rem] pl-[0.65rem] text-xs font-medium tracking-[-0.01em] text-[#0071e3] transition-[background-color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+          class="inline-flex cursor-pointer items-center gap-1 rounded-full border border-accent/30 bg-accent/10 py-[0.3rem] pr-[0.55rem] pl-[0.65rem] text-xs font-medium tracking-[-0.01em] text-accent transition-[background-color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
           :title="`Bỏ loại trừ ${key}`"
           @click="emit('remove', key)"
         >

@@ -8,6 +8,7 @@ import {
   mergeHolidaySelection,
   removeKeys,
   countExcludedHolidays,
+  specificExcludedChipLabel,
   rehydrateHolidaySelection,
   HOLIDAY_COUNTRIES,
   COUNTRY_DOT_PALETTE,
@@ -96,6 +97,17 @@ test("countExcludedHolidays intersects", () => {
       ["01/01/2026", "01/05/2026"],
     ),
   ).toBe(1);
+});
+
+test("specificExcludedChipLabel is count-only, not a date list", () => {
+  expect(
+    specificExcludedChipLabel(["01/01/2026", "02/01/2026", "03/01/2026"], 0),
+  ).toBe("Ngày · 3");
+  expect(
+    specificExcludedChipLabel(["01/01/2026", "02/01/2026", "03/01/2026"], 2),
+  ).toBe("Ngày · 1");
+  expect(specificExcludedChipLabel(["01/01/2026"], 1)).toBeNull();
+  expect(specificExcludedChipLabel([], 0)).toBeNull();
 });
 
 test("rehydrateHolidaySelection intersects without forcing missing holidays", () => {

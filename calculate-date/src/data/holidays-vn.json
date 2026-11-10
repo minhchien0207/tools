@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-28",
+  "updatedAt": "2026-11-10",
   "source": "https://calendar.google.com/calendar/ical/vi.vietnamese%23holiday%40group.v.calendar.google.com/public/basic.ics",
   "holidays": [
     {
@@ -395,6 +395,10 @@
       "name": "Tết dương lịch"
     },
     {
+      "date": "2027-02-04",
+      "name": "Tết"
+    },
+    {
       "date": "2027-02-05",
       "name": "Tết đêm giao thừa"
     },
@@ -437,6 +441,10 @@
     {
       "date": "2027-09-02",
       "name": "Quốc khánh"
+    },
+    {
+      "date": "2027-09-03",
+      "name": "Quốc khánh (ngày lễ bổ sung)"
     },
     {
       "date": "2027-11-24",

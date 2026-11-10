@@ -13,6 +13,10 @@ import {
   rehydrateHolidaySelection,
 } from "@/lib/holidays";
 
+/** Survives CalculatorForm remount after calculate (master off wipes excludedDates). */
+const persistedCountries = ref<CountryCode[]>([]);
+const persistedHolidayKeys = ref<string[]>([]);
+
 export type HolidayExcludeProps = {
   calcType: string;
   startDate: Date | null;
@@ -41,10 +45,10 @@ export function useHolidayExclude(
   emit: HolidayExcludeEmit,
 ): UseHolidayExcludeReturn {
   const excludeHolidays = ref(false);
-  /** Multi-select country codes; persists across master off→on */
-  const selectedCountries = ref<CountryCode[]>([]);
+  /** Multi-select country codes; persists across master off→on and form remount */
+  const selectedCountries = persistedCountries;
   /** Keys (`dd/MM/yyyy`) currently selected in the holiday chip list */
-  const selectedHolidayKeys = ref<string[]>([]);
+  const selectedHolidayKeys = persistedHolidayKeys;
   /** Previous window's selected keys — used to strip stale holiday keys on window change */
   const prevHolidayKeysInWindow = ref<string[]>([]);
 
@@ -77,6 +81,12 @@ export function useHolidayExclude(
         ).map((h) => toExcludedKey(h.date));
         if (keys.some((k) => excluded.has(k))) countriesWithHits.push(code);
       }
+    }
+
+    if (!countriesWithHits.length) {
+      excludeHolidays.value = false;
+      prevHolidayKeysInWindow.value = [];
+      return;
     }
 
     selectedCountries.value = countriesWithHits;
@@ -116,12 +126,12 @@ export function useHolidayExclude(
     excludeHolidays.value = checked;
     const keysInWindow = holidayChips.value.map((c) => c.key);
     if (!checked) {
-      selectedHolidayKeys.value = [];
       applyHolidaySync([], keysInWindow);
-      // Keep selectedCountries so pills restore on next master on.
       return;
     }
-    selectedHolidayKeys.value = [...keysInWindow];
+    const inWindow = new Set(keysInWindow);
+    const restored = selectedHolidayKeys.value.filter((k) => inWindow.has(k));
+    selectedHolidayKeys.value = restored.length ? restored : [...keysInWindow];
     applyHolidaySync(selectedHolidayKeys.value, keysInWindow);
   }
 

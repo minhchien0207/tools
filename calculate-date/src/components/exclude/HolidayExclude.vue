@@ -20,23 +20,31 @@ defineProps<{
 
 <template>
   <div class="min-w-0">
-    <div class="flex items-center justify-between gap-3">
+    <div class="flex min-h-11 items-center justify-between gap-3">
       <label
-        class="text-xs font-semibold tracking-[-0.01em] text-[#86868b]"
+        class="text-xs font-semibold tracking-[-0.01em] text-tertiary"
         for="exclude-holidays"
       >
         Loại trừ ngày lễ
       </label>
-      <input
-        id="exclude-holidays"
-        type="checkbox"
-        class="size-4 accent-[#0071e3] disabled:opacity-40"
-        :checked="excludeHolidays"
-        :disabled="!canUseHolidays"
-        @change="
-          onToggleMaster(($event.target as HTMLInputElement).checked)
-        "
-      />
+      <span class="relative inline-flex h-[31px] w-[51px] shrink-0 has-[:disabled]:opacity-40">
+        <input
+          id="exclude-holidays"
+          type="checkbox"
+          class="peer absolute inset-0 z-10 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+          :checked="excludeHolidays"
+          :disabled="!canUseHolidays"
+          @change="
+            onToggleMaster(($event.target as HTMLInputElement).checked)
+          "
+        />
+        <span
+          class="pointer-events-none h-[31px] w-[51px] rounded-full bg-[#e9e9eb] transition-colors duration-200 ease-out peer-checked:bg-success peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 motion-reduce:transition-none"
+        />
+        <span
+          class="pointer-events-none absolute top-[2px] left-[2px] size-[27px] rounded-full bg-white shadow-[0_3px_8px_rgba(0,0,0,0.15),0_1px_1px_rgba(0,0,0,0.16)] transition-transform duration-200 ease-out peer-checked:translate-x-[20px] motion-reduce:transition-none"
+        />
+      </span>
     </div>
     <p
       v-if="!canUseHolidays"
@@ -49,7 +57,7 @@ defineProps<{
       class="animate-fade-in mt-2 motion-reduce:animate-none"
     >
       <div
-        class="flex flex-wrap gap-1.5"
+        class="grid grid-cols-4 gap-1.5"
         role="group"
         aria-label="Quốc gia ngày lễ"
       >
@@ -57,11 +65,11 @@ defineProps<{
           v-for="country in HOLIDAY_COUNTRIES"
           :key="country.code"
           type="button"
-          class="inline-flex min-w-10 cursor-pointer items-center gap-1.5 rounded-full border px-[0.65rem] py-[0.4rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+          class="inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-full border px-1 py-[0.4rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
           :class="
             selectedCountries.includes(country.code)
-              ? 'border-[#0071e3]/35 bg-[#0071e3]/10 text-[#0071e3]'
-              : 'border-[#d2d2d7] bg-white/85 text-[#1d1d1f]'
+              ? 'border-accent/35 bg-accent/10 text-accent'
+              : 'border-separator bg-white/85 text-[#1d1d1f]'
           "
           :aria-pressed="selectedCountries.includes(country.code)"
           :aria-label="country.label"
@@ -98,8 +106,8 @@ defineProps<{
               class="inline-flex cursor-pointer items-center gap-1.5 rounded-full border py-[0.3rem] px-[0.65rem] text-xs font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-100 ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
               :class="
                 selectedHolidayKeys.includes(chip.key)
-                  ? 'border-[#0071e3]/30 bg-[#0071e3]/10 text-[#0071e3]'
-                  : 'border-[#d2d2d7] bg-white/85 text-[#86868b]'
+                  ? 'border-accent/30 bg-accent/10 text-accent'
+                  : 'border-separator bg-white/85 text-tertiary'
               "
               :aria-pressed="selectedHolidayKeys.includes(chip.key)"
               :title="chip.label"

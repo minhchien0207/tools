@@ -6,6 +6,8 @@ export interface ResultData {
   data: Record<number, string[]>;
   lastDate: string | null;
   startDate: string;
+  /** Dates excluded at calculate time. Form toggles must not paint until next calculate. */
+  excludedDates: string[];
 }
 
 export interface DayOfWeek {
@@ -144,6 +146,7 @@ export function useDateCalculator() {
       data: arrResult,
       lastDate,
       startDate: formattedSDate,
+      excludedDates: [...excludedDates.value],
     };
     return true;
   };
